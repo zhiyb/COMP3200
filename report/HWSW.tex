@@ -1,0 +1,30 @@
+%% ----------------------------------------------------------------
+%% HWSW.tex
+%% ----------------------------------------------------------------
+\chapter{Hardware platforms and software interfaces}
+
+This section describes the hardware platforms and software interfaces used to accomplish this project.
+
+\section{Hardware platforms}
+
+\subsection{Embedded host platform}
+
+The Jetson Tegra K1 embedded development platform \cite{NVIDIA:tk1} featuring a 2.32GHz quad-core ARM CPU and a CUDA-enabled Tegra GPU, introduced by NVIDIA, was used in this project. The fact that it is an embedded platform enables easy power consumption analysis, a rich set of peripherals interfaces exposed enables direct control and interfacing a camera module and it is powerful enough to compile programs and execute complex computer vision algorithms.
+
+\subsection{Camera module}
+
+Specific camera module to be used was not determined yet at the time this progress report was written, but it would be a high resolution camera module from OmniVision \cite{ovt} that can be easily interfaced and directly controlled with the peripheral interface on the Jetson TK1 platform. A Linux kernel module driver probably need to be developed in order to control the camera parameter and operations from program running in user space.
+
+\subsection{Testing platform}
+
+The computer vision algorithms that are platform and hardware independent were firstly tested on a generic laptop with built in webcam running Microsoft Windows, mainly because it was easier for user interaction and parameter tunning.
+
+\section{Software interfaces}
+
+\subsection{Embedded operating system}
+
+Ubuntu Linux distribution version 14.04.1 LTS was used on the platform, installed directly from the filesystem image provided by NVIDIA. Linux is great for this project because it is fully configurable, operating system overheads can be reduced to minimum by disabling unused services and even the graphical desktop environment. Most Linux operations could be done through just command line interface, perhaps via a SSH shell access, therefore programming and control the platform could be done anywhere with internet connection, which is very convenient.
+
+\subsection{Computer vision API}
+
+OpenCV \cite{opencv} was used to implement the algorithms, due to its cross platform adaptability, easy to use and large number of already existing algorithms ready for use and investigation. Furthermore, the OpenCV library for Jetson platform developed by NVIDIA was further optimised, provides 2x-5x speedup compare to regular OpenCV \cite{NVIDIA:perf}, the OpenCV GPU module based on NVIDIA CUDA was also available, provides 5x-20x speedup, these optimisations can reduce computation time dramatically, thus can lower power consumption further.

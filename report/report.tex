@@ -1,0 +1,84 @@
+%% ----------------------------------------------------------------
+%% Project.tex
+%% ----------------------------------------------------------------
+\documentclass[openany]{ecsproject}     % Use the Project Style
+\graphicspath{{images/}}   % Location of your graphics files
+%\DeclareGraphicsExtensions{.png,.jpg}
+\usepackage[square,numbers]{natbib}            % Use Natbib style for the refs.
+\hypersetup{colorlinks=true}   % Set to false for black/white printing
+\input{Definitions}            % Include your abbreviations
+%\bibliographystyle{ecs}
+\bibliographystyle{ieeetr}
+%% ----------------------------------------------------------------
+\begin{document}
+\frontmatter
+\title      {Energy efficient object detection and tracking through adaptive operation on heterogeneous multi-core systems}
+\authors    {\texorpdfstring
+             {\href{mailto:yz39g13@soton.ac.uk}{Yubo Zhi}}
+             {Yubo Zhi}
+            }
+\addresses  {\groupname\\\deptname\\\univname}
+\date       {\today}
+\subject    {}
+\keywords   {}
+\supervisor {\texorpdfstring
+             {\href{mailto:gvm@ecs.soton.ac.uk}{Dr Geoff Merrett}}
+             {Yubo Zhi}
+	    }
+\examiner   {\texorpdfstring
+             {\href{mailto:example@soton.ac.uk}{Someone}}
+             {Someone}
+	    }
+\degree     {BEng Electronic Engineering}
+\maketitle
+
+\begin{abstract}
+Object detection and tracking is a key technique used in computer vision applications, especially robotic systems, artificial intelligence and video surveillance systems, but video processing algorithms require a lot of computations, consume a significant amount of energy. This project was purposed to reduce power consumption and possibly improves performance of camera based real-time object detection and tracking applications. Such an application may rely heavily on battery power or harvesting energy from environment, hence power consumption on those devices becomes critical. As battery technology development was not as fast as electronic processing technology development, lower power consumption implies longer battery life for mobile devices e.g. laptops and smart phones, also lower environmental impact.
+
+This project investigated some hardware based methodologies to achieve an overall reduction of computations required for doing continuous real-time object detection and tracking, includes dynamical control of hardware downsampling and cropping provided by the camera controller, automatic camera sleeping and frame rate reduction based on whether objects detected, their location and moving speed relative to the camera sense.
+
+\iffalse
+The implementations and investigations were hosted on the NVIDIA Tegra K1 embedded platform, features a GPU accelerated OpenCV library, .
+
+
+
+In order to achieve this, automatic feedback control need to be developed based on previously recorded moving objects positions and velocities. GPU accelerated computer vision algorithm will also be deployed to minimise power consumption and computation time. For easier power consumption analysis, the Jetson embedded development platform featuring a quad-core ARM CPU and a CUDA-enabled Tegra GPU, introduced by NVIDIA, will be used in this project.
+
+In technical aspect, OpenCV API for Tegra with CUDA GPU acceleration developed by NVIDIA for the embedded platform will be used to implement the video processing algorithm. The algorithm will employ the widely used background subtraction technique to detect foreground moving objects and get their coordinates. A camera will also be interfaced with the platform to do capturing and detecting objects in real-time, by a Linux kernel module driver. Afterwards, an automatic feedback frame rate and resolution control will be implemented, then power consumption with different operation modes will be investigated and the energy saved by applying the proposed method will be analysed.
+
+If time allows, object identification may also be implemented, and possibly power saving technique will be investigated.
+
+The aims of this project are:
+	(internet enabled?)
+Implement: // Using CUDA / OpenCV on Jetson
+	Detect car in image
+	Potentially track through series of images
+Adaptive operation / optimise for energy: // Measurement & testing
+	Improve energy efficiency by reduce frame rate when detected vehicle speed is slow
+	Change image resolution
+\fi
+\end{abstract}
+
+\tableofcontents
+%\listoffigures
+%\listoftables
+%\lstlistoflistings
+%\listofsymbols{ll}{$w$ & The weight vector}
+
+%\acknowledgements{Thanks to no one.}
+%\dedicatory{To \dots}
+\mainmatter
+
+%% ----------------------------------------------------------------
+\include{Goals}
+\include{Background}
+\include{HWSW}
+\include{Implement}
+%\include{Management}
+\appendix
+%\include{AppendixA}
+
+\backmatter
+\bibliography{Reference}
+\end{document}
+%% ----------------------------------------------------------------
