@@ -3,4 +3,19 @@
 %% ----------------------------------------------------------------
 \chapter{Project management}
 
-Not finished yet.
+\section{Topic change}
+
+The topic of project changed once during week 7. The previous topic \ref{Appendix:brief_orig} was about reducing power consumption for algorithms that are utilising General Purpose GPU (GPGPU) technique for large scale parallelism floating point calculations, by dynamically controlling calculation precision. But after further investigation into the topic and experimented with some sample algorithms included with NVIDIA CUDA Toolkit, the precision control did not make a significant impact on computation quality, made the project a bit pointless and not encouraging.
+
+Therefore, the current project topic \ref{Appendix:brief_orig} was quickly determined, still using the same development platform NVIDIA Tegra K1, so that the time invested for the previous project was not wasted that much. Therefore, sensible progress was achieved before progress report.
+
+The Gantt chart also changed due to project topic changing, as shown in \ref{Appendix:gantt}. The time invested for previous project topic was treated as background reading.
+
+\section{Remaining work}
+
+\begin{itemize}
+  \item Movement tracking based on blob detection (Section \ref{bg:tracking}, \ref{impl:tracking}).
+  \item A camera module need to be ordered and interfaced.
+  \item Automatic frame rate reduction based on tracking result.
+  \item Hardware downsampling and cropping based on ROI.
+\end{itemize}

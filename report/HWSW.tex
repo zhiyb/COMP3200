@@ -12,6 +12,7 @@ This section describes the hardware platforms and software interfaces used to ac
 The Jetson Tegra K1 embedded development platform \cite{NVIDIA:tk1} featuring a 2.32GHz quad-core ARM CPU and a CUDA-enabled Tegra GPU, introduced by NVIDIA, was used in this project. The fact that it is an embedded platform enables easy power consumption analysis, a rich set of peripherals interfaces exposed enables direct control and interfacing a camera module and it is powerful enough to compile programs and execute complex computer vision algorithms.
 
 \subsection{Camera module}
+\label{hwsw:camera}
 
 Specific camera module to be used was not determined yet at the time this progress report was written, but it would be a high resolution camera module from OmniVision \cite{ovt} that can be easily interfaced and directly controlled with the peripheral interface on the Jetson TK1 platform. A Linux kernel module driver probably need to be developed in order to control the camera parameter and operations from program running in user space.
 
