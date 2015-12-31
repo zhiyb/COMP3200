@@ -56,8 +56,21 @@
 
 \usepackage{float}
 
-\usepackage{titlesec}
-\titleformat{\chapter}[hang]{\Large\bfseries}{\thechapter}{0.75cm}{\Large\bfseries}
+\usepackage[subfigure]{tocloft}
+\usepackage{titlesec,calc}
+\titlespacing*{\chapter}{0pt}{-35pt}{10pt}
+\setlength{\cftbeforetoctitleskip}{0pt}
+\setlength{\cftaftertoctitleskip}{10pt}
+
+%\renewcommand{\cftchappresnum}{\chaptername\space}
+%\setlength{\cftchapnumwidth}{\widthof{\textbf{Appendix~999~}}}
+\makeatletter
+\g@addto@macro\appendix{%
+  \addtocontents{toc}{%
+    \setlength{\cftchapnumwidth}{\widthof{\textbf{Appendix~999~}}}
+    \protect\renewcommand{\protect\cftchappresnum}{\appendixname\space}%
+  }%
+}
 
 \usepackage{fancyhdr}
 \lhead[\rm\thepage]{\fancyplain{}{\sl{\rightmark}}}
@@ -265,8 +278,8 @@
 \refstepcounter{dummy}
 \addcontentsline{toc}{chapter}{#1}}
 \renewcommand\tableofcontents{
-%\btypeout{Table of Contents}
-\btypeout{Contents}
+\btypeout{Table of Contents}
+%\btypeout{Contents}
 \begin{spacing}{1}{
     \setlength{\parskip}{1pt}
     \if@twocolumn
@@ -345,10 +358,13 @@
 \vfil\null
 \cleardoublepage
 }
+
 \renewcommand\mainmatter{
   %\cleardoublepage
   \@mainmattertrue
+  \titleformat{\chapter}[hang]{\LARGE\bfseries}{\thechapter}{0.75cm}{\LARGE\bfseries}
   \pagenumbering{arabic}}
+
 \renewcommand\backmatter{
   \if@openright
     \cleardoublepage

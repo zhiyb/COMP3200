@@ -1,7 +1,7 @@
 %% ----------------------------------------------------------------
 %% Implement.tex
 %% ----------------------------------------------------------------
-\chapter{Implementation}
+\chapter{Report on Technical Progress}
 
 \section{Object identification}
 
@@ -9,7 +9,7 @@
 
 An simple implementation \cite{MOTBOC.git} of colour filtering object detection algorithm was investigated, as shown in \fref{Figure:MOTBOC}.
 
-However, this implementation is very limited, it can only detects objects with single colour, cannot distinguishes the objects from similar background colour, relies heavily on manually adjusted colour threshold values, and is very sensitive to the variations of colourspaces from different cameras, not very adaptable. A complex environment may also results into lots of undesired detections, as shown in \fref{Figure:MOTBOC_F}.
+However, this implementation is very limited, it can only detects objects with single colour, cannot distinguish the objects from similar background colour, relies heavily on manually adjusted colour threshold values, and is very sensitive to the variations of colourspaces from different cameras, not very adaptable. A complex environment may also results into lots of undesired detections, as shown in \fref{Figure:MOTBOC_F}.
 
 \begin{figure}[H]
   \centering
@@ -79,7 +79,8 @@ The article \cite{bgs:article} reviewed the algorithms available in the BGSLibra
 
 It can be seen from \fref{Figure:bgs_frame} that MultiLayerBGS gave the best foreground masks, but it was also the slowest algorithm on the testing platform.
 
-\section{Movement tracking}
-\label{impl:tracking}
+\section{Remaining work}
 
-This was not yet implemented at the time this progress report was written.
+Connected component analysis or blob detection (\sref{blob}) and movement tracking (\sref{bg:tracking}) algorithms were not implemented yet.
+
+A suitable camera module need to be ordered and interfaced afterwards, then implement automatic feedback control of frame rate, cropping and downsampling.

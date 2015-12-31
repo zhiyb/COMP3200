@@ -1,7 +1,7 @@
 %% ----------------------------------------------------------------
 %% Background.tex
 %% ----------------------------------------------------------------
-\chapter{Background and report of literature search}
+\chapter{Background and literature search}
 
 There were lots of different algorithms existing in the field of object detection and tracking. Some of those algorithms were investigated in this project in order to identify a set of suitable algorithms that were both accurate and efficient enough to analysis video stream from camera in real-time.
 
@@ -70,7 +70,7 @@ This implementation could be suitable for ball tracking purpose. By combining wi
 
 \subsection{Cascade Classifier}
 
-Cascade classifier \cite{cascade} is another widely used technique. It concatenates several classifiers detecting different object features to finally recognise objects, and it can be trained both positively and negatively to improve accuracy. It was usually used not only for object detection, but also for object classification, for example recognise human and different classes of vehicles in a single frame.
+Cascade classifier \cite{cascade} is another widely used technique. It concatenates several classifiers detecting different object features to finally recognise objects, and its accuracy can be improved by training the classifier both positively and negatively. It was usually used not only for object detection, but also for object classification, for example recognise human and different classes of vehicles in a single frame.
 
 The OpenCV's cascade classifier implementation \cite{opencv:cc} of face and eye detection was investigated as shown in \fref{Figure:cc_face}.
 
@@ -93,7 +93,7 @@ This type of algorithms suit well for static camera movement tracking, and were 
 
 After obtained the foreground object mask by background subtraction (Section \ref{motion_bs}), it need to be interpreted as objects, so that the properties of each object can then be retrieved, including shape, bounding rectangle and location of the object.
 
-Connected component analysis, or Connected component labeling, is used for detecting connected regions (blobs), which are the possible regions of objects. A blob detector can be used to mark and labeling individual objects from the foreground mask, therefore obtain parameters such as shape, size, location and orientation of the object.
+Connected component analysis, or Connected component labeling, is used for detecting connected regions (blobs), which are the possible regions of objects. A blob detector can be used to mark and label individual objects from the foreground mask, therefore obtain parameters such as shape, size, location and orientation of the object.
 
 There were also lots of free and open source blob detection libraries available, e.g. the simple blob detector came with OpenCV \cite{opencv:blob}, cvBlob library \cite{cvblob}.
 
@@ -113,3 +113,7 @@ Continuously Adaptive Meanshift (CAMshift) \cite{bradski1998computer} is an algo
 \section{Object recognition}
 
 Object recognition could also be developed by applying different cascade classifiers to the ROI of the specific object. This process is the most computation intensive and time consuming step, therefore should be executed as few as possible to achieve maximum power saving, for example, only execute once when the object first enter the sense or at its maximum visible size to the camera.
+
+\section{Automatic feedback control}
+
+Research about energy-efficient object detection by utilising hardware-level operations exists \cite{casares2011energy}, achieved an energy consumption reduction by $54.136\%$. But it was done on a very different and limited platform, also possible to extend further.
