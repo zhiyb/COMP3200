@@ -1,0 +1,21 @@
+SRC	= helper.cpp main.cpp yavta.c
+TRG	= V4L2
+
+OBJ	= $(subst .S,.o,$(subst .c,.o,$(SRC:.cpp=.o)))
+CXXFLAGS	+= -std=c++11 -g
+CFLAGS	+= -g
+LDFLAGS	+= -lglfw3 -lGLEW -lGL -lXxf86vm -lpthread -lXrandr -lXinerama -lXi -lXcursor -lX11 -ldl
+
+.PHONY: all
+all: $(TRG)
+
+$(TRG): $(OBJ)
+	$(CXX) $^ $(LDFLAGS) -o $(TRG)
+
+.PHONY: run
+run: $(TRG)
+	DISPLAY=:0 ./$(TRG)
+
+.PHONY: clean
+clean:
+	rm -f $(TRG) $(OBJ)
