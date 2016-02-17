@@ -7,8 +7,8 @@ out VERTEX {
 	smooth vec2 texCoord;
 } vertex;
 
-void main(void)
+void main()
 {
 	gl_Position = projection * vec4(position, 0.0, 1.0);
-	vertex.texCoord = (position * vec2(-1.0, -1.0) + 1.0) / 2.0;
+	vertex.texCoord = (position * vec2(1.0, -1.0) + 1.0) / 2.0;
 }

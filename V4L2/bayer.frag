@@ -7,9 +7,83 @@ in VERTEX {
 	smooth vec2 texCoord;
 } vertex;
 
-void main(void)
+// 10-bit resolution
+#define MAX_RES	1023.0
+
+float texelCorner()
 {
-	uint texel = texture(sampler, vertex.texCoord).r;
-	float colour = float(texel) / 1024.0;
-	FragColor = vec4(colour, colour, colour, 1.0);
+	uint texel = 0;
+	texel += textureOffset(sampler, vertex.texCoord, ivec2(-1, -1));
+	texel += textureOffset(sampler, vertex.texCoord, ivec2(-1, 1));
+	texel += textureOffset(sampler, vertex.texCoord, ivec2(1, -1));
+	texel += textureOffset(sampler, vertex.texCoord, ivec2(1, 1));
+	return float(texel / 4) / MAX_RES;
+}
+
+float texelNear()
+{
+	uint texel = 0;
+	texel += textureOffset(sampler, vertex.texCoord, ivec2(-1, 0));
+	texel += textureOffset(sampler, vertex.texCoord, ivec2(1, 0));
+	texel += textureOffset(sampler, vertex.texCoord, ivec2(0, -1));
+	texel += textureOffset(sampler, vertex.texCoord, ivec2(0, 1));
+	return float(texel / 4) / MAX_RES;
+}
+
+float texelHorizontal()
+{
+	uint texel = 0;
+	texel += textureOffset(sampler, vertex.texCoord, ivec2(-1, 0));
+	texel += textureOffset(sampler, vertex.texCoord, ivec2(1, 0));
+	return float(texel / 2) / MAX_RES;
+}
+
+float texelVertical()
+{
+	uint texel = 0;
+	texel += textureOffset(sampler, vertex.texCoord, ivec2(0, -1));
+	texel += textureOffset(sampler, vertex.texCoord, ivec2(0, 1));
+	return float(texel / 2) / MAX_RES;
+}
+
+float texelCenter()
+{
+	uint texel = texture(sampler, vertex.texCoord, 0).r;
+	return float(texel) / MAX_RES;
+}
+
+void main()
+{
+	float r = 0, g = 0, b = 0;
+
+	uint x = uint(vertex.texCoord.x * textureSize(sampler, 0).x);
+	uint y = uint(vertex.texCoord.y * textureSize(sampler, 0).y);
+	// B,G/G,R
+	if (y % 2 == 0) {
+		if (x % 2 == 0) {
+			// RGR/GBG/RGR
+			r = texelCorner();
+			g = texelNear();
+			b = texelCenter();
+		} else {
+			// GRG/BGB/GRG
+			r = texelVertical();
+			g = texelCenter();
+			b = texelHorizontal();
+		}
+	} else {
+		if (x % 2 == 0) {
+			// GBG/RGR/GBG
+			r = texelHorizontal();
+			g = texelCenter();
+			b = texelVertical();
+		} else {
+			// BGB/GRG/BGB
+			r = texelCenter();
+			g = texelNear();
+			b = texelCorner();
+		}
+	}
+
+	FragColor = vec4(r, g, b, 1.0);
 }

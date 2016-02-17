@@ -1,5 +1,8 @@
 SRC	= helper.cpp main.cpp yavta.c
 TRG	= V4L2
+ARG	= 2592 1944
+ARG	= 640 480
+ARG	= 320 240
 
 OBJ	= $(subst .S,.o,$(subst .c,.o,$(SRC:.cpp=.o)))
 CXXFLAGS	+= -std=c++11 -g
@@ -14,7 +17,7 @@ $(TRG): $(OBJ)
 
 .PHONY: run
 run: $(TRG)
-	DISPLAY=:0 ./$(TRG)
+	DISPLAY=:0 ./$(TRG) $(ARG)
 
 .PHONY: clean
 clean:

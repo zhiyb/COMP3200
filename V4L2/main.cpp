@@ -3,6 +3,7 @@
 #include <fstream>
 #include <map>
 #include <cstdlib>
+#include <unistd.h>
 
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
@@ -21,11 +22,10 @@
 using namespace std;
 using namespace glm;
 
-unsigned int width, height, texture;
 #ifndef TEST_PATTERN
 struct device dev;
-struct v4l2_buffer buf;
 #endif
+unsigned int width, height, texture;
 map<string, GLint> location;
 
 void setupVertices()
@@ -60,7 +60,7 @@ void refreshCB(GLFWwindow *window)
 	glfwGetWindowSize(window, &width, &height);
 	glViewport(0, 0, width, height);
 	GLfloat aspi = (GLfloat)height / (GLfloat)width;
-	mat4 projection = ortho<GLfloat>(-1.f, 1.f, -aspi, aspi, -1, 1);
+	mat4 projection;// = ortho<GLfloat>(-1.f, 1.f, -aspi, aspi, -1, 1);
 	glUniformMatrix4fv(location["projection"], 1, GL_FALSE, (GLfloat *)&projection);
 }
 
@@ -92,15 +92,34 @@ void getUniforms(GLuint program, const char **uniforms)
 	}
 }
 
-int main(int /*argc*/, char * /*argv*/[])
+int main(int argc, char *argv[])
 {
-	width = 1280;
-	height = 960;
+	if (argc == 3) {
+		width = atoi(argv[1]);
+		height = atoi(argv[2]);
+	} else {
+#if 1
+		width = 1280;
+		height = 960;
+#elif 0
+		width = 1920;
+		height = 1080;
+#else
+		width = 2592;
+		height = 1944;
+#endif
+	}
+	printf("Requested video size: %ux%u\n", width, height);
 
 #ifndef TEST_PATTERN
 	int ret;
 	if ((ret = video_init(&dev, "/dev/video0", V4L2_PIX_FMT_SBGGR10, width, height)) != 0)
 		return ret;
+#endif
+
+#ifndef TEST_PATTERN
+	struct v4l2_buffer buf[2];
+	unsigned int bufidx = 0;
 #endif
 
 	// OpenGL variables
@@ -114,13 +133,16 @@ int main(int /*argc*/, char * /*argv*/[])
 	const char *uniforms[] = {
 		"projection", 0
 	};
+	double past;
+	unsigned int count;
 
+#ifdef TEST_PATTERN
 	unsigned short test[width * height];
 	unsigned short i = 0, h, w, *ptr = test;
 	for (w = 0; w != width; w++)
 		for (h = 0; h != height; h++)
 			*ptr++ = i++;
-
+#endif
 
 	/* Initialize the library */
 	if (!glfwInit())
@@ -131,7 +153,7 @@ int main(int /*argc*/, char * /*argv*/[])
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-	window = glfwCreateWindow(1280, 960, "Hello World", NULL, NULL);
+	window = glfwCreateWindow(width, height, "Hello World", NULL, NULL);
 	if (!window) {
 		glfwTerminate();
 		goto failed;
@@ -139,7 +161,7 @@ int main(int /*argc*/, char * /*argv*/[])
 
 	/* Make the window's context current */
 	glfwMakeContextCurrent(window);
-	glfwSwapInterval(1);
+	//glfwSwapInterval(1);
 	glewExperimental = GL_TRUE;
 	glewInit();
 
@@ -175,32 +197,53 @@ int main(int /*argc*/, char * /*argv*/[])
 		goto failed;
 #endif
 
+#ifndef TEST_PATTERN
+	if (video_capture(&dev, &buf[bufidx]) != 0)
+		goto captureFailed;
+	bufidx = !bufidx;
+#endif
+
 	/* Loop until the user closes the window */
+	past = glfwGetTime();
+	//capture = glfwGetTime();
+	count = 0;
 	while (!glfwWindowShouldClose(window)) {
 #ifndef TEST_PATTERN
-		if (video_capture(&dev, &buf) != 0)
+		if (video_capture(&dev, &buf[bufidx]) != 0)
 			goto captureFailed;
+		bufidx = !bufidx;
+
+		//usleep(1 * 1000);
 #endif
 
 #ifndef TEST_PATTERN
 		//dev.buffers[buf.index].mem, buf.bytesused;
 		//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RED, GL_UNSIGNED_SHORT, dev.buffers[buf.index].mem);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_R16UI, width, height, 0, GL_RED_INTEGER, GL_UNSIGNED_SHORT, dev.buffers[buf.index].mem);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_R16UI, width, height, 0, GL_RED_INTEGER,
+				GL_UNSIGNED_SHORT, dev.buffers[buf[bufidx].index].mem);
 #else
 		//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RED, GL_UNSIGNED_SHORT, test);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_R16UI, width, height, 0, GL_RED_INTEGER, GL_UNSIGNED_SHORT, test);
 #endif
 
-		/* Render here */
-		render();
-
 #ifndef TEST_PATTERN
-		if (video_buffer_requeue(&dev, &buf) != 0)
+		if (video_buffer_requeue(&dev, &buf[bufidx]) != 0)
 			goto captureFailed;
 #endif
 
+		/* Render here */
+		render();
+
 		/* Swap front and back buffers */
 		glfwSwapBuffers(window);
+
+		count++;
+		double now = glfwGetTime();
+		if (now - past > 3) {
+			printf("%g FPS\n", (double)count / (now - past));
+			count = 0;
+			past = now;
+		}
 
 		/* Poll for and process events */
 		glfwPollEvents();

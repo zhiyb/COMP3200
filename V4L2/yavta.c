@@ -198,7 +198,7 @@ static int video_alloc_buffers(struct device *dev, int nbufs, unsigned int offse
 			printf("Unable to query buffer %u (%d).\n", i, errno);
 			return ret;
 		}
-		printf("length: %u offset: %u\n", buf.length, buf.m.offset);
+		//printf("length: %u offset: %u\n", buf.length, buf.m.offset);
 
 		switch (dev->memtype) {
 		case V4L2_MEMORY_MMAP:
@@ -208,7 +208,7 @@ static int video_alloc_buffers(struct device *dev, int nbufs, unsigned int offse
 				return ret;
 			}
 			buffers[i].size = buf.length;
-			printf("Buffer %u mapped at address %p.\n", i, buffers[i].mem);
+			//printf("Buffer %u mapped at address %p.\n", i, buffers[i].mem);
 			break;
 
 		case V4L2_MEMORY_USERPTR:
@@ -301,7 +301,9 @@ int video_capture(struct device *dev, struct v4l2_buffer *buf)
 	buf->type = dev->type;
 	buf->memory = dev->memtype;
 	ret = ioctl(dev->fd, VIDIOC_DQBUF, buf);
+	//printf("flags: 0x%08x\n", buf->flags);
 	if (ret < 0) {
+		//printf("flags: 0x%08x\n", buf->flags);
 		if (errno != EIO) {
 			printf("Unable to dequeue buffer (%d).\n", errno);
 			return errno;
@@ -317,7 +319,7 @@ int video_capture(struct device *dev, struct v4l2_buffer *buf)
 		printf("Warning: bytes used %u != image size %u\n",
 		       buf->bytesused, dev->imagesize);
 
-#if 1
+#if 0
 	printf("(%u) [%c] %u %u bytes %ld.%06ld\n", buf->index,
 		(buf->flags & V4L2_BUF_FLAG_ERROR) ? 'E' : '-',
 		buf->sequence, buf->bytesused, buf->timestamp.tv_sec,
