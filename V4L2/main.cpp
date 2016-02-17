@@ -15,6 +15,7 @@
 #include "yavta.h"
 
 //#define TEST_PATTERN
+#define CAPTURE_SWAP_BUFFER
 
 #define FILE_VERTEX_SHADER	"basic.vert"
 #define FILE_FRAGMENT_SHADER	"bayer.frag"
@@ -198,9 +199,11 @@ int main(int argc, char *argv[])
 #endif
 
 #ifndef TEST_PATTERN
+#ifdef CAPTURE_SWAP_BUFFER
 	if (video_capture(&dev, &buf[bufidx]) != 0)
 		goto captureFailed;
 	bufidx = !bufidx;
+#endif
 #endif
 
 	/* Loop until the user closes the window */
@@ -211,7 +214,9 @@ int main(int argc, char *argv[])
 #ifndef TEST_PATTERN
 		if (video_capture(&dev, &buf[bufidx]) != 0)
 			goto captureFailed;
+#ifdef CAPTURE_SWAP_BUFFER
 		bufidx = !bufidx;
+#endif
 
 		//usleep(1 * 1000);
 #endif
