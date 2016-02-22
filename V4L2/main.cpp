@@ -22,7 +22,6 @@
 
 #define MAX_W	OV5647_MAX_W
 #define MAX_H	OV5647_MAX_H
-//#define CAPTURE_SWAP_BUFFER
 
 #define FILE_VERTEX_SHADER	"basic.vert"
 #define FILE_FRAGMENT_SHADER	"bayer.frag"
@@ -42,11 +41,11 @@ static float fps;
 enum {	REQUEST_NONE = 0x00,
 	REQUEST_CAPTURE,
 	REQUEST_QUIT,
-	REQUEST_DEBUG,
+	REQUEST_SWAP,
 };
 static struct status_t {
 	volatile unsigned int request;
-	volatile int debug;
+	volatile bool swap;
 } status;
 
 static inline int setLED(uint32_t enable)
@@ -154,6 +153,9 @@ loop:
 	} else if (cmd == "quit") {
 		status.request = REQUEST_QUIT;
 		return 0;
+	} else if (cmd == "swap") {
+		cout << "Change to " << (status.swap ? "non " : "") << "swapping capture" << endl;
+		status.request = REQUEST_SWAP;
 	} else if (cmd == "res") {
 		resolution();
 	} else if (cmd == "cap") {
@@ -184,9 +186,6 @@ void keyCB(GLFWwindow * /*window*/, int key, int /*scancode*/, int action, int /
 		return;
 	case GLFW_KEY_S:
 		status.request = REQUEST_CAPTURE;
-		return;
-	case GLFW_KEY_D:
-		status.debug = 0;
 		return;
 	}
 }
@@ -252,7 +251,7 @@ int main(int argc, char *argv[])
 	unsigned int count;
 	// Status
 	status.request = REQUEST_NONE;
-	status.debug = -1;
+	status.swap = true;
 	int err;
 	// Threads
 	pthread_t pid_input;
@@ -334,13 +333,13 @@ int main(int argc, char *argv[])
 	count = 0;
 
 restart:
-#ifdef CAPTURE_SWAP_BUFFER
-	setLED(1);
-	if ((err = video_capture(&dev, &buf[bufidx])) != 0)
-		goto captureFailed;
-	setLED(0);
-	bufidx = !bufidx;
-#endif
+	if (status.swap) {
+		setLED(1);
+		if ((err = video_capture(&dev, &buf[bufidx])) != 0)
+			goto captureFailed;
+		setLED(0);
+		bufidx = !bufidx;
+	}
 
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window)) {
@@ -348,9 +347,8 @@ restart:
 		if ((err = video_capture(&dev, &buf[bufidx])) != 0)
 			goto captureFailed;
 		setLED(0);
-#ifdef CAPTURE_SWAP_BUFFER
-		bufidx = !bufidx;
-#endif
+		if (status.swap)
+			bufidx = !bufidx;
 
 		//setLED(1);
 		//printf("%s: buffer %u\n", __func__, buf[bufidx].index);
@@ -393,6 +391,14 @@ restart:
 		case REQUEST_CAPTURE:
 			printf("saveCapture(): %d\n", saveCapture());
 			goto restart;
+		case REQUEST_SWAP:
+			status.swap = !status.swap;
+			if (status.swap)
+				goto restart;
+			bufidx = !bufidx;
+			if ((err = video_buffer_requeue(&dev, &buf[bufidx])) != 0)
+				goto captureFailed;
+			continue;
 		case REQUEST_QUIT:
 			goto quit;
 		}
