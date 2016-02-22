@@ -6,5 +6,5 @@ else
 	xrandr --fb 1400x800
 fi
 xrandr
-x11vnc
+x11vnc -alwaysshared -threads -forever
 exit 0

@@ -7,7 +7,7 @@ ARG	= 320 240
 OBJ	= $(subst .S,.o,$(subst .c,.o,$(SRC:.cpp=.o)))
 CXXFLAGS	+= -std=c++11 -g
 CFLAGS	+= -g
-LDFLAGS	+= -lglfw3 -lGLEW -lGL -lXxf86vm -lpthread -lXrandr -lXinerama -lXi -lXcursor -lX11 -ldl
+LDFLAGS	+= -lglfw3 -lGLEW -lGL -lXxf86vm -lpthread -lXrandr -lXinerama -lXi -lXcursor -lX11 -ldl -lpthread
 
 .PHONY: all
 all: $(TRG)

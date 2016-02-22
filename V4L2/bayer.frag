@@ -56,11 +56,10 @@ void main()
 {
 	float r = 0, g = 0, b = 0;
 
-	uint x = uint(vertex.texCoord.x * textureSize(sampler, 0).x);
-	uint y = uint(vertex.texCoord.y * textureSize(sampler, 0).y);
+	uvec2 pos = uvec2(vertex.texCoord * textureSize(sampler, 0));
 	// B,G/G,R
-	if (y % 2 == 0) {
-		if (x % 2 == 0) {
+	if (pos.y % 2 == 0) {
+		if (pos.x % 2 == 0) {
 			// RGR/GBG/RGR
 			r = texelCorner();
 			g = texelNear();
@@ -72,7 +71,7 @@ void main()
 			b = texelHorizontal();
 		}
 	} else {
-		if (x % 2 == 0) {
+		if (pos.x % 2 == 0) {
 			// GBG/RGR/GBG
 			r = texelHorizontal();
 			g = texelCenter();

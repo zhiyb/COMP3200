@@ -37,9 +37,12 @@
 #define V4L2_BUF_FLAG_ERROR	0x0040
 #endif
 
+#define V4L_BUFFERS_DEFAULT	8
+#define V4L_BUFFERS_MAX	32
+
 #define ARRAY_SIZE(a)	(sizeof(a)/sizeof((a)[0]))
 
-static int video_set_format(struct device *dev, unsigned int w, unsigned int h, unsigned int format)
+int video_set_format(struct device *dev, unsigned int w, unsigned int h, unsigned int format)
 {
 	struct v4l2_format fmt;
 	int ret;
@@ -159,7 +162,7 @@ void video_close(struct device *dev)
 	close(dev->fd);
 }
 
-static int video_alloc_buffers(struct device *dev, int nbufs, unsigned int offset)
+int video_alloc_buffers(struct device *dev, int nbufs, unsigned int offset)
 {
 	struct v4l2_requestbuffers rb;
 	struct v4l2_buffer buf;
@@ -232,7 +235,7 @@ static int video_alloc_buffers(struct device *dev, int nbufs, unsigned int offse
 	return 0;
 }
 
-static int video_queue_buffer(struct device *dev, int index)
+int video_queue_buffer(struct device *dev, int index)
 {
 	struct v4l2_buffer buf;
 	int ret;
@@ -271,6 +274,44 @@ int video_enable(struct device *dev, int enable)
 	}
 
 	return 0;
+}
+
+int video_get_control(struct device *dev, unsigned int id, int *value)
+{
+	struct v4l2_control ctrl;
+	int ret;
+
+	ctrl.id = id;
+
+	ret = ioctl(dev->fd, VIDIOC_G_CTRL, &ctrl);
+	if (ret < 0) {
+		printf("%s: Unable to get control 0x%x: %s (%d).\n",
+			__func__, id, strerror(errno), errno);
+	} else
+		*value = ctrl.value;
+
+	//printf("Control 0x%08x value 0x%x\n", id, ctrl.value);
+	return ret;
+}
+
+int video_set_control(struct device *dev, unsigned int id, int *value)
+{
+	struct v4l2_control ctrl;
+	int ret;
+
+	ctrl.id = id;
+	ctrl.value = *value;
+
+	ret = ioctl(dev->fd, VIDIOC_S_CTRL, &ctrl);
+	if (ret < 0) {
+		printf("%s: Unable to set control 0x%x: %s (%d).\n",
+			__func__, id, strerror(errno), errno);
+		return ret;
+	}
+
+	*value = ctrl.value;
+	//printf("Control 0x%08x set to %u, is 0x%x\n", id, value, ctrl.value);
+	return 0;//ctrl.value;
 }
 
 static int video_prepare_capture(struct device *dev, int nbufs)
@@ -352,11 +393,9 @@ int video_buffer_requeue(struct device *dev, struct v4l2_buffer *buf)
 	return 0;
 }
 
-#define V4L_BUFFERS_DEFAULT	8
-#define V4L_BUFFERS_MAX	32
-
 #if 1
-int video_init(struct device *dev, const char *devfile, unsigned int pixelformat, unsigned int width, unsigned int height)
+int video_init(struct device *dev, const char *devfile, unsigned int pixelformat,
+		unsigned int width, unsigned int height, unsigned int nbufs)
 #else
 int main()
 #endif
@@ -365,7 +404,8 @@ int main()
 
 	/* Video buffers */
 	enum v4l2_memory memtype = V4L2_MEMORY_MMAP;
-	unsigned int nbufs = V4L_BUFFERS_DEFAULT;
+	if (nbufs == 0)
+		nbufs = V4L_BUFFERS_DEFAULT;
 
 	/* Capture loop */
 	if (nbufs > V4L_BUFFERS_MAX)

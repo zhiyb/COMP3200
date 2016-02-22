@@ -39,12 +39,12 @@ dmesg -l debug
 dmesg -c
 
 sync
-read -s
+read
 echo -e '\e[93mdmesg:\e[0m'
 dmesg -c
 
 sync
-read -s
+read
 echo -e '\e[93mUnloading modules...\e[0m'
 modprobe -r tegra_camera
 modprobe -r soc_camera
