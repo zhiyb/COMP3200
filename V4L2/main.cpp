@@ -1,8 +1,10 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
+#include <sstream>
 #include <map>
 #include <cstdlib>
+#include <cstring>
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/select.h>
@@ -47,9 +49,9 @@ static struct status_t {
 	volatile int debug;
 } status;
 
-static inline int setLED(int enable)
+static inline int setLED(uint32_t enable)
 {
-	return video_set_control(&dev, OV5647_CTRL_LED, &enable);
+	return video_set_control(&dev, OV5647_CID_LED, &enable);
 }
 
 int saveCapture()
@@ -90,38 +92,31 @@ int saveCapture()
 
 #define FUNC_DBG	ESC_GREY << __func__ << ": "
 
-void debug()
+void writeRegister(const bool word, const unsigned int addr, const unsigned int value)
 {
-	if (status.debug >= 0) {
-		printf("%s: %u\n", __func__, status.debug);
-		int value = 0x55;
-		video_set_control(&dev, OV5647_CTRL_BASE + status.debug, &value);
-		status.debug = -1;
-	}
+	cout << FUNC_DBG << ESC_BLUE;
+	uint32_t val = (word ? OV5647_CID_REG_WMASK : 0) | ((uint32_t)addr << 16) | value;
+	int ret = video_set_control(&dev, OV5647_CID_REG_W, &val);
+	if (ret)
+		cerr << ESC_RED << strerror(ret) << endl;
+	else if (word)
+		printf("0x%04x", val & 0xffff);
+	else
+		printf("0x%02x", val & 0xff);
+	cout << endl;
 }
 
-void debug_set()
+void readRegister(const bool word, const unsigned int addr)
 {
-	int id, value;
-	//cout << FUNC_DBG << ESC_CYAN "V4L2 control:" ESC_DEFAULT << endl;
-	if (!(cin >> hex >> id) || id < 0)
-		return;
-	if (!(cin >> hex >> value) || value < 0)
-		return;
-	cout << FUNC_DBG << ESC_BLUE << hex << ' ' << id << ' ' << value << ' ' << ESC_RED;
-	cout << video_set_control(&dev, OV5647_CTRL_BASE + id, &value);
-	cout << ESC_YELLOW " New: " << value << endl;
-}
-
-void debug_read()
-{
-	unsigned int i;
-	cout << FUNC_DBG;
-	for (i = 0; i < OV5647_CTRL_DEBUG_COUNT; i++) {
-		int value;
-		if (video_get_control(&dev, OV5647_CTRL_BASE + i, &value) == 0)
-			printf(ESC_BLUE "%u=" ESC_GREEN "0x%04x, ", i, value);
-	}
+	cout << FUNC_DBG << ESC_BLUE;
+	uint32_t val = (word ? OV5647_CID_REG_WMASK : 0) | ((uint32_t)addr << 16);
+	int ret = video_set_control(&dev, OV5647_CID_REG_R, &val);
+	if (ret)
+		cerr << ESC_RED << strerror(ret) << endl;
+	else if (word)
+		printf("0x%04x", val & 0xffff);
+	else
+		printf("0x%02x", val & 0xff);
 	cout << endl;
 }
 
@@ -133,26 +128,37 @@ void *inputThread(void *param)
 {
 	string str;
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
+	cin >> hex;
+	cout << hex;
 loop:
 	cout << ESC_GREY << __func__ << ": " << ESC_GREEN << "> " << ESC_DEFAULT;
-	cin >> str;
-	//getline(cin, str);
-	//cout << ESC_GREY << __func__ << ": " << ESC_WHITE << str << ESC_DEFAULT << endl;
-	if (str == "fps") {
+	getline(cin, str);
+	istringstream sstr(str);
+	sstr >> hex;
+	string cmd;
+	if (!(sstr >> cmd))
+		goto loop;
+	bool word = false;
+	if (cmd == "fps") {
 		cout << "FPS: " << fps << endl;
-	} else if (str == "read") {
-		debug_read();
-	} else if (str == "set") {
-		debug_set();
-	} else if (str == "quit") {
+	} else if (cmd == "rb" || (word = (cmd == "rw"))) {
+		unsigned int addr;
+		if (!(sstr >> addr))
+			goto loop;
+		readRegister(word, addr);
+	} else if (cmd == "wb" || (word = (cmd == "ww"))) {
+		unsigned int addr, value;
+		if (!(sstr >> addr >> value))
+			goto loop;
+		writeRegister(word, addr, value);
+	} else if (cmd == "quit") {
 		status.request = REQUEST_QUIT;
 		return 0;
-	} else if (str == "res") {
+	} else if (cmd == "res") {
 		resolution();
-	} else if (str == "cap") {
+	} else if (cmd == "cap") {
 		status.request = REQUEST_CAPTURE;
 	}
-	cin.clear();
 	goto loop;
 }
 
@@ -390,7 +396,6 @@ restart:
 		case REQUEST_QUIT:
 			goto quit;
 		}
-		debug();
 		/* Poll for and process events */
 		glfwPollEvents();
 	}

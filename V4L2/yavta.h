@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
 #include <linux/videodev2.h>
 
 struct buffer
@@ -41,8 +42,8 @@ int video_queue_buffer(struct device *dev, int index);
 int video_buffer_requeue(struct device *dev, struct v4l2_buffer *buf);
 
 int video_set_format(struct device *dev, unsigned int w, unsigned int h, unsigned int format);
-int video_set_control(struct device *dev, unsigned int id, int *value);
-int video_get_control(struct device *dev, unsigned int id, int *value);
+int video_set_control(struct device *dev, uint32_t id, uint32_t *value);
+int video_get_control(struct device *dev, uint32_t id, uint32_t *value);
 
 #ifdef __cplusplus
 }

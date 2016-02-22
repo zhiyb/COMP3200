@@ -276,12 +276,14 @@ int video_enable(struct device *dev, int enable)
 	return 0;
 }
 
-int video_get_control(struct device *dev, unsigned int id, int *value)
+int video_get_control(struct device *dev, uint32_t id, uint32_t *value)
 {
 	struct v4l2_control ctrl;
 	int ret;
+	uint32_t pv = *value;
 
 	ctrl.id = id;
+	//ctrl.value = *value;
 
 	ret = ioctl(dev->fd, VIDIOC_G_CTRL, &ctrl);
 	if (ret < 0) {
@@ -290,11 +292,11 @@ int video_get_control(struct device *dev, unsigned int id, int *value)
 	} else
 		*value = ctrl.value;
 
-	//printf("Control 0x%08x value 0x%x\n", id, ctrl.value);
+	//printf("Control 0x%08x(0x%08x) value 0x%x\n", id, pv, ctrl.value);
 	return ret;
 }
 
-int video_set_control(struct device *dev, unsigned int id, int *value)
+int video_set_control(struct device *dev, uint32_t id, uint32_t *value)
 {
 	struct v4l2_control ctrl;
 	int ret;
@@ -309,8 +311,8 @@ int video_set_control(struct device *dev, unsigned int id, int *value)
 		return ret;
 	}
 
+	//printf("Control 0x%08x set to 0x%08x, is 0x%08x\n", id, *value, ctrl.value);
 	*value = ctrl.value;
-	//printf("Control 0x%08x set to %u, is 0x%x\n", id, value, ctrl.value);
 	return 0;//ctrl.value;
 }
 

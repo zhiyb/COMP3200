@@ -864,42 +864,48 @@ static int ov5647_s_power(struct v4l2_subdev *sd, int on)
 
 static int ov5647_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
 {
-	struct ov5647_priv *priv = container_of(ctrl->handler, struct ov5647_priv, hdl);
-	unsigned int addr;
-	u8 val[2];
-	int err;
-	if (ctrl->id >= OV5647_CTRL_BASE) {
-		//pr_info("%s: %08x\n", __func__, ctrl->id);
-		addr = (ctrl->id - OV5647_CTRL_BASE) * 2 + OV5647_CTRL_DEBUG_BASE;
-		if ((err = ov5647_read_reg(priv->i2c_client, addr, &val[1])) != 0)
-			return err;
-		if ((err = ov5647_read_reg(priv->i2c_client, addr + 1, &val[0])) != 0)
-			return err;
-		ctrl->val = ((u16)val[1] << 8) | val[0];
-		return 0;
-	}
 	return -EINVAL;
 }
 
 static int ov5647_s_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct ov5647_priv *priv = container_of(ctrl->handler, struct ov5647_priv, hdl);
+	unsigned int addr;
+	u8 val[2] = {0};
 	int err;
 	if (priv->status & STATUS_NEED_INIT)
 		return 0;
 	switch (ctrl->id) {
-	case OV5647_CTRL_LED:
+	case OV5647_CID_LED:
 		gpio_set_value(CAM1_GPIO, ctrl->val ? 1 : 0);
-		ctrl->val = 0x55aa;
+		ctrl->val = ctrl->val ? 0x55aa : 0;
 		return 0;
-	}
-	if (ctrl->id >= OV5647_CTRL_BASE) {
-		unsigned int addr = (ctrl->id - OV5647_CTRL_BASE) * 2 + OV5647_CTRL_DEBUG_BASE;
-		pr_info("%s: %x/%04x(0x%04x)\n", __func__, ctrl->id - OV5647_CTRL_BASE, addr, ctrl->val);
-		if ((err = ov5647_write_reg(priv->i2c_client, addr, ctrl->val >> 8)) != 0)
+	case OV5647_CID_REG_W:
+		addr = (ctrl->val & ~OV5647_CID_REG_WMASK) >> 16;
+		if (ctrl->val & OV5647_CID_REG_WMASK) {
+			u8 data[] = {addr >> 8, addr, ctrl->val >> 8, ctrl->val};
+			if ((err = ov5647_write_seq(priv->i2c_client, data, sizeof(data))) != 0)
+				return err;
+			//pr_info("%s: 0x%04x=0x%04x\n", __func__, addr, ctrl->val & 0xffff);
+		} else {
+			if ((err = ov5647_write_reg(priv->i2c_client, addr, ctrl->val)) != 0)
+				return err;
+			//pr_info("%s: 0x%04x=0x%02x\n", __func__, addr, ctrl->val & 0xff);
+		}
+		return 0;
+	case OV5647_CID_REG_R:
+		addr = (ctrl->val & ~OV5647_CID_REG_WMASK) >> 16;
+		if ((err = ov5647_read_reg(priv->i2c_client, addr, &val[1])) != 0)
 			return err;
-		if ((err = ov5647_write_reg(priv->i2c_client, addr + 1, ctrl->val & 0xff)) != 0)
-			return err;
+		if (ctrl->val & OV5647_CID_REG_WMASK) {
+			if ((err = ov5647_read_reg(priv->i2c_client, addr + 1, &val[0])) != 0)
+				return err;
+			ctrl->val = (ctrl->val & ~0xffffUL) | ((u16)val[1] << 8) | val[0];
+			//pr_info("%s: 0x%04x=0x%04x\n", __func__, addr, ctrl->val & 0xffff);
+		} else {
+			ctrl->val = (ctrl->val & ~0xffffUL) | val[1];
+			//pr_info("%s: 0x%04x=0x%02x\n", __func__, addr, ctrl->val & 0xff);
+		}
 		return 0;
 	}
 	return -EINVAL;
@@ -920,19 +926,21 @@ static const struct v4l2_subdev_ops ov5647_subdev_ops = {
 	.video	= &ov5647_subdev_video_ops,
 };
 
-static void ov5647_add_debug_ctrl(struct ov5647_priv *priv, u32 id, const char *name)
+static void ov5647_add_reg_ctrl(struct ov5647_priv *priv)
 {
-	const struct v4l2_ctrl_config ctrl = {
+	struct v4l2_ctrl_config ctrl = {
 		.ops = &ov5647_ctrl_ops,
-		.id = OV5647_CTRL_BASE + id,
-		.name = name,
-		.type = V4L2_CTRL_TYPE_INTEGER,
+		.id = OV5647_CID_REG_W,
+		.name = "Register write (debug)",
+		.type = V4L2_CTRL_TYPE_BITMASK,
 		.flags = V4L2_CTRL_FLAG_VOLATILE,
 		.min = 0,
-		.max = 0xffff,
-		.step = 1,
+		.max = 0xffffffff,
 		.def = 0,
 	};
+	v4l2_ctrl_new_custom(&priv->hdl, &ctrl, NULL);
+	ctrl.name = "Register read (debug)";
+	ctrl.id = OV5647_CID_REG_R;
 	v4l2_ctrl_new_custom(&priv->hdl, &ctrl, NULL);
 }
 
@@ -1005,7 +1013,7 @@ static int ov5647_probe(struct i2c_client *client,
 {
 	struct ov5647_priv *priv;
 	//const char *mclk_name;
-	int err, i;
+	int err;
 
 	if (test_mode)
 		pr_info("%s: test_mode: 0x%02x\n", __func__, test_mode);
@@ -1071,12 +1079,11 @@ static int ov5647_probe(struct i2c_client *client,
 	}
 
 	v4l2_i2c_subdev_init(&priv->subdev, client, &ov5647_subdev_ops);
-	v4l2_ctrl_handler_init(&priv->hdl, OV5647_CTRL_NUM);
+	v4l2_ctrl_handler_init(&priv->hdl, OV5647_CID_NUM);
 	// ops, id, min, max, step, def
 	v4l2_ctrl_new_std(&priv->hdl, &ov5647_ctrl_ops,
-			OV5647_CTRL_LED, 0, 1, 1, 0);
-	for (i = 0; i < OV5647_CTRL_DEBUG_COUNT; i++)
-		ov5647_add_debug_ctrl(priv, i, "DEBUG");
+			OV5647_CID_LED, 0, 1, 1, 0);
+	ov5647_add_reg_ctrl(priv);
 	priv->subdev.ctrl_handler = &priv->hdl;
 	v4l2_ctrl_handler_setup(&priv->hdl);
 	if (priv->hdl.error) {
