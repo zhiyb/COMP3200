@@ -1,0 +1,33 @@
+SRC	= helper.cpp main.cpp
+SRC	+= yavta.c
+SRC	+= cv.cpp
+TRG	= V4L2
+DEV	= /dev/video0
+#RES	= 2592 1944
+#RES	= 1280 960
+RES	= 640 480
+#RES	= 320 240
+
+OBJ	= $(subst .S,.o,$(subst .c,.o,$(SRC:.cpp=.o)))
+CC	= gcc
+CFLAGS	+= -g -Wall
+CXXFLAGS	+= -std=c++11 -g -Wall
+LDFLAGS	+= -g
+LDFLAGS	+= -lglfw3 -lGLEW -lGL
+LDFLAGS	+= -lopencv_core -lopencv_highgui -lopencv_imgproc
+LDFLAGS	+= -lXxf86vm -lpthread -lXrandr -lXinerama -lXi -lXcursor -lX11 -ldl
+
+.PHONY: all
+all: $(TRG)
+
+$(TRG): $(OBJ)
+	$(CXX) $^ $(LDFLAGS) -o $(TRG)
+
+.PHONY: run
+run: $(TRG)
+	sync
+	DISPLAY=:0 ./$(TRG) $(DEV) $(RES)
+
+.PHONY: clean
+clean:
+	rm -f $(TRG) $(OBJ)
