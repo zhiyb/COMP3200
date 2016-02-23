@@ -75,6 +75,7 @@ struct ov5647_priv {
 	struct i2c_client		*i2c_client;
 	int				mode;
 	unsigned int			status;
+	u16				reg_addr;
 	//struct clk			*mclk;
 	//struct mutex			ov5647_camera_lock;
 	//struct dentry			*debugdir;
@@ -864,6 +865,26 @@ static int ov5647_s_power(struct v4l2_subdev *sd, int on)
 
 static int ov5647_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
 {
+	struct ov5647_priv *priv = container_of(ctrl->handler, struct ov5647_priv, hdl);
+	u16 addr;
+	u8 val[2] = {0};
+	int err;
+	switch (ctrl->id) {
+	case OV5647_CID_REG_R:
+		addr = priv->reg_addr & ~(OV5647_CID_REG_WMASK >> 16);
+		if ((err = ov5647_read_reg(priv->i2c_client, addr, &val[1])) != 0)
+			return err;
+		if (priv->reg_addr & (OV5647_CID_REG_WMASK >> 16)) {
+			if ((err = ov5647_read_reg(priv->i2c_client, addr + 1, &val[0])) != 0)
+				return err;
+			ctrl->val = ((u16)val[1] << 8) | val[0];
+			//pr_info("%s: 0x%04x=0x%04x\n", __func__, addr, ctrl->val & 0xffff);
+		} else {
+			ctrl->val = val[1];
+			//pr_info("%s: 0x%04x=0x%02x\n", __func__, addr, ctrl->val & 0xff);
+		}
+		return 0;
+	}
 	return -EINVAL;
 }
 
@@ -871,7 +892,6 @@ static int ov5647_s_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct ov5647_priv *priv = container_of(ctrl->handler, struct ov5647_priv, hdl);
 	unsigned int addr;
-	u8 val[2] = {0};
 	int err;
 	if (priv->status & STATUS_NEED_INIT)
 		return 0;
@@ -894,18 +914,7 @@ static int ov5647_s_ctrl(struct v4l2_ctrl *ctrl)
 		}
 		return 0;
 	case OV5647_CID_REG_R:
-		addr = (ctrl->val & ~OV5647_CID_REG_WMASK) >> 16;
-		if ((err = ov5647_read_reg(priv->i2c_client, addr, &val[1])) != 0)
-			return err;
-		if (ctrl->val & OV5647_CID_REG_WMASK) {
-			if ((err = ov5647_read_reg(priv->i2c_client, addr + 1, &val[0])) != 0)
-				return err;
-			ctrl->val = (ctrl->val & ~0xffffUL) | ((u16)val[1] << 8) | val[0];
-			//pr_info("%s: 0x%04x=0x%04x\n", __func__, addr, ctrl->val & 0xffff);
-		} else {
-			ctrl->val = (ctrl->val & ~0xffffUL) | val[1];
-			//pr_info("%s: 0x%04x=0x%02x\n", __func__, addr, ctrl->val & 0xff);
-		}
+		priv->reg_addr = ctrl->val >> 16;
 		return 0;
 	}
 	return -EINVAL;
