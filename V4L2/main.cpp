@@ -93,16 +93,18 @@ int saveCapture()
 
 void writeRegister(const bool word, const unsigned int addr, const unsigned int value)
 {
-	cout << FUNC_DBG << ESC_BLUE;
+	//cout << FUNC_DBG << ESC_BLUE;
 	uint32_t val = (word ? OV5647_CID_REG_WMASK : 0) | ((uint32_t)addr << 16) | value;
 	int ret = video_set_control(&dev, OV5647_CID_REG_W, &val);
 	if (ret)
 		cerr << ESC_RED << strerror(ret) << endl;
+#if 0
 	else if (word)
 		printf("0x%04x", val & 0xffff);
 	else
 		printf("0x%02x", val & 0xff);
 	cout << endl;
+#endif
 }
 
 void readRegister(const bool word, const unsigned int addr)
@@ -110,6 +112,9 @@ void readRegister(const bool word, const unsigned int addr)
 	cout << FUNC_DBG << ESC_BLUE;
 	uint32_t val = (word ? OV5647_CID_REG_WMASK : 0) | ((uint32_t)addr << 16);
 	int ret = video_set_control(&dev, OV5647_CID_REG_R, &val);
+	if (ret)
+		cerr << ESC_RED << strerror(ret) << endl;
+	ret = video_get_control(&dev, OV5647_CID_REG_R, &val);
 	if (ret)
 		cerr << ESC_RED << strerror(ret) << endl;
 	else if (word)
@@ -218,24 +223,6 @@ void getUniforms(GLuint program, const char **uniforms)
 
 int main(int argc, char *argv[])
 {
-	if (argc == 3) {
-		width = atoi(argv[1]);
-		height = atoi(argv[2]);
-	} else {
-#if 0
-		width = 1280;
-		height = 960;
-#elif 1
-		width = 1920;
-		height = 1080;
-#else
-		width = 2592;
-		height = 1944;
-#endif
-	}
-	pixelformat = V4L2_PIX_FMT_SBGGR10;
-	printf("Requested video size: %ux%u\n", width, height);
-
 	// OpenGL variables
 	GLFWwindow *window;
 	GLuint program;
@@ -256,6 +243,27 @@ int main(int argc, char *argv[])
 	// Threads
 	pthread_t pid_input;
 
+	if (argc == 4) {
+		width = atoi(argv[2]);
+		height = atoi(argv[3]);
+	} else if (argc == 1) {
+		cerr << "Please specify the device." << endl;
+		return 1;
+	} else {
+#if 0
+		width = 1280;
+		height = 960;
+#elif 1
+		width = 1920;
+		height = 1080;
+#else
+		width = 2592;
+		height = 1944;
+#endif
+	}
+	pixelformat = V4L2_PIX_FMT_SBGGR10;
+	printf("Requested video size: %ux%u\n", width, height);
+
 	/* Initialize the library */
 	if (!glfwInit()) {
 		err = -1;
@@ -263,7 +271,7 @@ int main(int argc, char *argv[])
 	}
 
 	// Initialise V4L2
-	if ((err = video_init(&dev, "/dev/video0", pixelformat, MAX_W, MAX_H, 4)) != 0)
+	if ((err = video_init(&dev, argv[1], pixelformat, MAX_W, MAX_H, 4)) != 0)
 		goto initFailed;
 	if ((err = video_set_format(&dev, width, height, pixelformat)) < 0)
 		goto failed;
@@ -415,5 +423,5 @@ failed:
 	video_close(&dev);
 initFailed:
 	glfwTerminate();
-	return -1;
+	return err;
 }
