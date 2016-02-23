@@ -7,16 +7,8 @@
 #include <cstdlib>
 #include <cstring>
 #include <unistd.h>
-//#include <pthread.h>
 #include <sys/select.h>
 
-#define GLM_FORCE_RADIANS
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/constants.hpp>
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-#include "helper.h"
 #include "global.h"
 #include "ov5647_v4l2.h"
 #include "escape.h"
@@ -124,7 +116,6 @@ void resolution()
 void inputThread()
 {
 	string str;
-	//pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
 	cin >> hex;
 	cout << hex;
 loop:
@@ -167,9 +158,6 @@ void refreshCB(GLFWwindow *window)
 	int width, height;
 	glfwGetWindowSize(window, &width, &height);
 	glViewport(0, 0, width, height);
-	//GLfloat aspi = (GLfloat)height / (GLfloat)width;
-	//mat4 projection;// = ortho<GLfloat>(-1.f, 1.f, -aspi, aspi, -1, 1);
-	//glUniformMatrix4fv(location["projection"], 1, GL_FALSE, (GLfloat *)&projection);
 }
 
 void keyCB(GLFWwindow * /*window*/, int key, int /*scancode*/, int action, int /*mods*/)
@@ -234,7 +222,6 @@ int main(int argc, char *argv[])
 	status.swap = true;
 	int err;
 	// Threads
-	//pthread_t pid_input, pid_cv;
 	thread *tInput, *tCV;
 
 	// Arguments
@@ -314,9 +301,7 @@ int main(int argc, char *argv[])
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-	//glTexStorage2D(GL_TEXTURE_2D, 1, GL_R16UI, width, height);
-	//glTexImage2D(GL_TEXTURE_2D, 0, GL_R16UI, width, height, 0, GL_RED_INTEGER, GL_UNSIGNED_SHORT, test);
-	//glTexImage2D(GL_TEXTURE_2D, 0, GL_R16UI, width, height, 0, GL_RED_INTEGER, GL_UNSIGNED_SHORT, NULL);
+	glTexStorage2D(GL_TEXTURE_2D, 1, GL_R16UI, status.width, status.height);
 
 	setupVertices();
 
@@ -327,15 +312,12 @@ int main(int argc, char *argv[])
 	// Setup threads
 	tInput = new thread(inputThread);
 	tCV = new thread(cvThread);
-	//pthread_create(&pid_input, NULL, inputThread, NULL);
-	//pthread_create(&pid_cv, NULL, cvThread, NULL);
 
 	/* Start streaming. */
 	if ((err = video_enable(&dev, 1)) != 0)
 		goto failed;
 
 	past = glfwGetTime();
-	//capture = glfwGet/Time();
 	count = 0;
 
 restart:
@@ -356,29 +338,26 @@ restart:
 		if (status.swap)
 			bufidx = !bufidx;
 
+#if 0
 		//setLED(1);
 		//printf("%s: buffer %u\n", __func__, buf[bufidx].index);
 		//dev.buffers[buf.index].mem, buf.bytesused;
 		glBufferSubData(GL_PIXEL_UNPACK_BUFFER, 0, status.width * status.height * 2, dev.buffers[buf[bufidx].index].mem);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_R16UI, status.width, status.height, 0, GL_RED_INTEGER,
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, status.width, status.height, GL_RED_INTEGER,
 				GL_UNSIGNED_SHORT, 0);
-		//glTexImage2D(GL_TEXTURE_2D, 0, GL_R16UI, width, height, 0, GL_RED_INTEGER,
-		//		GL_UNSIGNED_SHORT, dev.buffers[buf[bufidx].index].mem);
-		//glTexImage2D(GL_TEXTURE_2D, 0, GL_R16UI, width, height, 0, GL_RED_INTEGER, GL_UNSIGNED_SHORT, NULL);
-		//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RED_INTEGER,
-		//		GL_UNSIGNED_SHORT, dev.buffers[buf[bufidx].index].mem);
-		//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RED_INTEGER,
-		//		GL_UNSIGNED_SHORT, 0);
 		//setLED(0);
+#endif
 
 		if ((err = video_buffer_requeue(&dev, &buf[bufidx])) != 0)
 			goto captureFailed;
 
+#if 0
 		/* Render here */
 		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
 		/* Swap front and back buffers */
 		glfwSwapBuffers(window);
+#endif
 
 		count++;
 		double now = glfwGetTime();
@@ -420,10 +399,6 @@ captureFailed:
 	delete tInput;
 	tCV->join();
 	delete tCV;
-	//pthread_cancel(pid_cv);
-	//pthread_join(pid_cv, NULL);
-	//pthread_cancel(pid_input);
-	//pthread_join(pid_input, NULL);
 failed:
 	video_close(&dev);
 initFailed:

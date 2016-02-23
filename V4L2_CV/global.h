@@ -1,6 +1,7 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
+#include <mutex>
 #include "yavta.h"
 
 enum {	REQUEST_NONE = 0x00,
