@@ -1,6 +1,8 @@
 SRC	= helper.cpp main.cpp
 SRC	+= yavta.c
 SRC	+= cv.cpp
+SRC	+= preview.cpp
+SRC	+= input.cpp
 TRG	= V4L2
 DEV	= /dev/video0
 #RES	= 2592 1944
