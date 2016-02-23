@@ -16,12 +16,11 @@
 using namespace std;
 using namespace glm;
 
-struct thread_t pvThreadInfo;
+struct thread_t pvData;
 
 // OpenGL
 static unsigned int texture;
 static map<string, GLint> location;
-static float fps;
 
 void refreshCB(GLFWwindow *window)
 {
@@ -74,8 +73,6 @@ void getUniforms(GLuint program, const char **uniforms)
 
 void pvThread()
 {
-	int err;
-
 	// OpenGL variables
 	GLFWwindow *window;
 	GLuint program;
@@ -86,13 +83,10 @@ void pvThread()
 		{0, NULL}
 	};
 	const char *uniforms[] = {/*"projection",*/ 0};
-	// FPS counter
-	double past;
-	unsigned int count;
 
 	/* Initialize the library */
 	if (!glfwInit()) {
-		err = -1;
+		pvData.err = -1;
 		return;
 	}
 
@@ -105,13 +99,13 @@ void pvThread()
 	glfwSetWindowPos(window, status.width, 0);
 	if (!window) {
 		glfwTerminate();
-		err = -1;
+		pvData.err = -2;
 		return;
 	}
 
 	/* Make the window's context current */
 	glfwMakeContextCurrent(window);
-	//glfwSwapInterval(1);
+	glfwSwapInterval(1);
 	glewExperimental = GL_TRUE;
 	glewInit();
 	glEnable(GL_TEXTURE_2D);
@@ -120,7 +114,7 @@ void pvThread()
 	program = setupProgramFromFiles(shaders);
 	if (program == 0) {
 		glfwTerminate();
-		err = -1;
+		pvData.err = -3;
 		return;
 	}
 	glUseProgram(program);
@@ -148,21 +142,23 @@ void pvThread()
 	glfwSetKeyCallback(window, keyCB);
 	refreshCB(window);
 
-	// Waiting for start
-	;
+	// Waiting for ready start
+	pvData.mtx.lock();
+	pvData.mtx.unlock();
 
-	past = glfwGetTime();
-	count = 0;
+	// FPS counter
+	float past = glfwGetTime();
+	unsigned int count = 0;
 
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window) && status.request != REQUEST_QUIT) {
-		//setLED(1);
-		//printf("%s: buffer %u\n", __func__, buf[bufidx].index);
 		//dev.buffers[buf.index].mem, buf.bytesused;
-		glBufferSubData(GL_PIXEL_UNPACK_BUFFER, 0, status.width * status.height * 2, dev.buffers[buf[bufidx].index].mem);
+		pvData.mtx.lock();
+		pvData.bufidx = bufidx;
+		pvData.mtx.unlock();
+		glBufferSubData(GL_PIXEL_UNPACK_BUFFER, 0, status.width * status.height * 2, dev.buffers[pvData.bufidx].mem);
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, status.width, status.height, GL_RED_INTEGER,
 				GL_UNSIGNED_SHORT, 0);
-		//setLED(0);
 
 		/* Render here */
 		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
@@ -171,9 +167,10 @@ void pvThread()
 		glfwSwapBuffers(window);
 
 		count++;
-		double now = glfwGetTime();
+		float now = glfwGetTime();
 		if (now - past > 3) {
-			fps = (float)count / (now - past);
+			float fps = (float)count / (now - past);
+			status.pvFPS = fps;
 			char buf[32];
 			sprintf(buf, "%g FPS", fps);
 			glfwSetWindowTitle(window, buf);

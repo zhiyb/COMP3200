@@ -5,8 +5,9 @@
 #include "yavta.h"
 #include "ov5647_v4l2.h"
 
-#define MAX_W	OV5647_MAX_W
-#define MAX_H	OV5647_MAX_H
+#define MAX_W		OV5647_MAX_W
+#define MAX_H		OV5647_MAX_H
+#define BUFFER_NUM	5
 
 enum {	REQUEST_NONE = 0x00,
 	REQUEST_CAPTURE,
@@ -24,11 +25,13 @@ extern struct status_t {
 
 // V4L2
 extern struct device dev;
-extern struct v4l2_buffer buf[2];
 extern volatile unsigned int bufidx;
 
 extern struct thread_t {
-} pvThreadInfo;
+	std::mutex mtx;
+	volatile int bufidx;
+	volatile int err;
+} pvData, cvData;
 
 void inputThread();
 void cvThread();

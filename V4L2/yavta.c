@@ -280,7 +280,7 @@ int video_get_control(struct device *dev, uint32_t id, uint32_t *value)
 {
 	struct v4l2_control ctrl;
 	int ret;
-	uint32_t pv = *value;
+	//uint32_t pv = *value;
 
 	ctrl.id = id;
 	//ctrl.value = *value;

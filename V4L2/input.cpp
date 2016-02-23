@@ -66,9 +66,9 @@ loop:
 		goto loop;
 	bool word = false;
 	if (cmd == "fps") {
-		cout << "Video FPS: " << status.vFPS << endl;
-		cout << "Preview FPS: " << status.pvFPS << endl;
-		cout << "CV FPS: " << status.cvFPS << endl;
+		cout << "  Video: " << status.vFPS << endl;
+		cout << "Preview: " << status.pvFPS << endl;
+		cout << "     CV: " << status.cvFPS << endl;
 	} else if (cmd == "rb" || (word = (cmd == "rw"))) {
 		unsigned int addr;
 		if (!(sstr >> addr))
