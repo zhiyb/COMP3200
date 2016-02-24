@@ -3,18 +3,28 @@ SRC	+= yavta.c
 SRC	+= cv.cpp
 SRC	+= preview.cpp
 SRC	+= input.cpp
+
+BGSSRC	+= package_bgs/jmo/MultiLayerBGS.cpp \
+	   package_bgs/jmo/CMultiLayerBGS.cpp \
+	   package_bgs/jmo/LocalBinaryPattern.cpp \
+	   package_bgs/jmo/blob.cpp \
+	   package_bgs/jmo/BlobResult.cpp \
+	   package_bgs/jmo/BlobExtraction.cpp \
+	   package_bgs/FrameDifferenceBGS.cpp
+SRC	+= $(BGSSRC:%=bgslibrary/%)
+
 TRG	= V4L2
 DEV	= /dev/video0
 #RES	= 2592 1944
 #RES	= 1920 1080
-RES	= 1280 960
-#RES	= 640 480
+#RES	= 1280 960
+RES	= 640 480
 #RES	= 320 240
 
 OBJ	= $(subst .S,.o,$(subst .c,.o,$(SRC:.cpp=.o)))
 CC	= gcc
-CFLAGS	+= -g -Wall
-CXXFLAGS	+= -std=c++11 -g -Wall
+CFLAGS	+= -g -Wall -Ibgslibrary
+CXXFLAGS	+= -std=c++11 -g -Wall -Ibgslibrary
 LDFLAGS	+= -g
 LDFLAGS	+= -lglfw3 -lGLEW -lGL
 LDFLAGS	+= -lopencv_core -lopencv_highgui -lopencv_imgproc
