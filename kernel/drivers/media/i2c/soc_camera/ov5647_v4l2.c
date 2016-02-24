@@ -132,7 +132,8 @@ static struct ov5647_reg default_regs[] = {
 	{0x370C, 0x03},	// ANALOG_CONTROL 37
 	{0x3612, 0x5B},	// ANALOG_CONTROL 36
 	{0x3618, 0x04},	// ANALOG_CONTROL 36
-	{0x5000, 0x06},	// ISP(bc, wc)
+	//{0x5000, 0x06},	// ISP(bc, wc)
+	{0x5000, 0xff},	// ISP(lenc, bc, wc)
 #if 0
 #if 1
 	{0x5001, 0x00},	// ISP
@@ -841,9 +842,9 @@ static int ov5647_s_power(struct v4l2_subdev *sd, int on)
 	int err;
 
 	pr_info("%s: on: %d\n", __func__, on);
+	priv->status = STATUS_NEED_INIT;
 
 	if (on) {
-		priv->status = STATUS_NEED_INIT;
 		//err = ov5647_mclk_enable(priv);
 		//if (!err)
 			err = ov5647_power_on(&priv->power);
@@ -855,12 +856,15 @@ static int ov5647_s_power(struct v4l2_subdev *sd, int on)
 		//if (err < 0)
 			//ov5647_mclk_disable(priv);
 		//return err;
-	} else if (!on) {
+	} else {
+		ov5647_write_reg(priv->i2c_client, 0x0100, 0x00);
+		//ov5647_write_reg(priv->i2c_client, 0x0103, 0x01);
+		msleep_range(OV5647_WAIT_MS);
+
 		ov5647_power_off(&priv->power);
 		//ov5647_mclk_disable(priv);
 		return 0;
-	} else
-		return -EINVAL;
+	}
 }
 
 static int ov5647_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
