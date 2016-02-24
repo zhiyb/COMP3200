@@ -105,7 +105,7 @@ void pvThread()
 
 	/* Make the window's context current */
 	glfwMakeContextCurrent(window);
-	glfwSwapInterval(33);
+	glfwSwapInterval(2);
 	glewExperimental = GL_TRUE;
 	glewInit();
 	glEnable(GL_TEXTURE_2D);

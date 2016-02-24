@@ -57,7 +57,7 @@ void inputThread()
 	cin >> hex;
 	cout << hex;
 loop:
-	cout << ESC_GREY << __func__ << ": " << ESC_GREEN << "> " << ESC_DEFAULT;
+	cout << ESC_GREY << __func__ << ESC_GREEN << "> " << ESC_DEFAULT;
 	getline(cin, str);
 	istringstream sstr(str);
 	sstr >> hex;

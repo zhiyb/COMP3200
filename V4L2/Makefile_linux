@@ -17,8 +17,8 @@ TRG	= V4L2
 DEV	= /dev/video0
 #RES	= 2592 1944
 #RES	= 1920 1080
-#RES	= 1280 960
-RES	= 640 480
+RES	= 1280 960
+#RES	= 640 480
 #RES	= 320 240
 
 OBJ	= $(subst .S,.o,$(subst .c,.o,$(SRC:.cpp=.o)))
@@ -27,7 +27,7 @@ CFLAGS	+= -g -Wall -Ibgslibrary
 CXXFLAGS	+= -std=c++11 -g -Wall -Ibgslibrary
 LDFLAGS	+= -g
 LDFLAGS	+= -lglfw3 -lGLEW -lGL
-LDFLAGS	+= -lopencv_core -lopencv_highgui -lopencv_imgproc
+LDFLAGS	+= -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_gpu
 LDFLAGS	+= -lXxf86vm -lpthread -lXrandr -lXinerama -lXi -lXcursor -lX11 -ldl
 
 .PHONY: all

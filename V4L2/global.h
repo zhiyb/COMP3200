@@ -5,9 +5,11 @@
 #include "yavta.h"
 #include "ov5647_v4l2.h"
 
+#define ENABLE_PV
+
 #define MAX_W		OV5647_MAX_W
 #define MAX_H		OV5647_MAX_H
-#define BUFFER_NUM	5
+#define BUFFER_NUM	4
 
 enum {	REQUEST_NONE = 0x00,
 	REQUEST_CAPTURE,

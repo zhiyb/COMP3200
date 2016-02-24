@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include <opencv2/opencv.hpp>
+#include <opencv2/gpu/gpu.hpp>
 #include "global.h"
 
 #include "package_bgs/FrameDifferenceBGS.h"
@@ -59,14 +60,27 @@ struct thread_t cvData;
 
 void cvThread()
 {
+	// OpenCV GPU
+	cout << __func__ << ": Cuda devices: " << gpu::getCudaEnabledDeviceCount() << endl;
+	if (gpu::getCudaEnabledDeviceCount() == 0) {
+		status.request = REQUEST_QUIT;
+		return;
+	}
+	gpu::setDevice(0);
+
 	/* Background Subtraction Methods */
 	IBGS *bgs;
-
 	/*** Default Package ***/
-	bgs = new FrameDifferenceBGS;
-
+	//bgs = new FrameDifferenceBGS;
 	/*** JMO Package (thanks to Jean-Marc Odobez) ***/
-	//bgs = new MultiLayerBGS;
+	bgs = new MultiLayerBGS;
+
+	Mat img_input(status.height, status.width, CV_8UC3);
+	Mat img_mask;
+	Mat img_bkgmodel;
+	gpu::GpuMat *raw;
+	gpu::GpuMat *rawu8;
+	gpu::GpuMat *img;
 
 	// Waiting for ready start
 	cvData.mtx.lock();
@@ -74,25 +88,31 @@ void cvThread()
 
 	int64_t past = getTickCount(), count = 0;
 	while (status.request != REQUEST_QUIT) {
+		raw = new gpu::GpuMat();
 		cvData.mtx.lock();
 		cvData.bufidx = bufidx;
 		cvData.mtx.unlock();
-		Mat raw(status.height, status.width, CV_16UC1, dev.buffers[cvData.bufidx].mem);
-		if (raw.empty())
+		raw->upload(Mat(status.height, status.width, CV_16UC1, dev.buffers[cvData.bufidx].mem));
+		if (raw->empty())
 			break;
-		Mat rawu8;
-		raw.convertTo(rawu8, CV_8UC1, 1.f / 4.f);
 		cvData.mtx.lock();
 		cvData.bufidx = -1;
 		cvData.mtx.unlock();
 
-		Mat img_input;
-		cvtColor(rawu8, img_input, CV_BayerBG2RGB);
+		rawu8 = new gpu::GpuMat();
+		raw->convertTo(*rawu8, CV_8UC1, 1.f / 4.f);
+		delete raw;
+
+		img = new gpu::GpuMat();
+		gpu::cvtColor(*rawu8, *img, CV_BayerBG2RGB);
+		delete rawu8;
+
+		img->download(img_input);
+		delete img;
 		imshow("cv_input", img_input);
 
-		cv::Mat img_mask;
-		cv::Mat img_bkgmodel;
-		bgs->process(img_input, img_mask, img_bkgmodel); // by default, it shows automatically the foreground mask image
+		// by default, it shows automatically the foreground mask image
+		bgs->process(img_input, img_mask, img_bkgmodel);
 
 		count++;
 		int64_t now = getTickCount();
@@ -106,4 +126,5 @@ void cvThread()
 		if (waitKey(1) >= 0)
 			status.request = REQUEST_QUIT;
 	}
+	status.request = REQUEST_QUIT;
 }

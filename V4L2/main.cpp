@@ -104,9 +104,11 @@ int main(int argc, char *argv[])
 	bool locked = true;
 	thread tInput(inputThread);
 	thread tCV(cvThread);
-	thread tPV(pvThread);
 	cvData.bufidx = -1;
+#ifndef ENABLE_PV
+	thread tPV(pvThread);
 	pvData.bufidx = -1;
+#endif
 
 	/* Start streaming. */
 	int64_t past = getTickCount(), count = 0;
@@ -142,14 +144,20 @@ restart:
 			if (i != bufidx && bufstatus[i] != Queued)
 				bufstatus[i] = Free;
 		if (!locked) {
+#ifndef ENABLE_PV
 			pvData.mtx.lock();
+#endif
 			cvData.mtx.lock();
 		}
+#ifndef ENABLE_PV
 		if (pvData.bufidx != -1)
 			bufstatus[pvData.bufidx] = Used;
+#endif
 		if (cvData.bufidx != -1)
 			bufstatus[cvData.bufidx] = Used;
+#ifndef ENABLE_PV
 		pvData.mtx.unlock();
+#endif
 		cvData.mtx.unlock();
 		for (unsigned int i = 0; i < BUFFER_NUM; i++)
 			if (bufstatus[i] == Free) {
@@ -193,10 +201,14 @@ failed:
 	status.request = REQUEST_QUIT;
 	printf("%s: quitting\n", __func__);
 	if (locked) {
+#ifndef ENABLE_PV
 		pvData.mtx.unlock();
+#endif
 		cvData.mtx.unlock();
 	}
+#ifndef ENABLE_PV
 	tPV.join();
+#endif
 	tCV.join();
 	tInput.detach();
 	video_close(&dev);
