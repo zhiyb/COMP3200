@@ -1,9 +1,10 @@
 #include <stdint.h>
 #include <opencv2/opencv.hpp>
 #include <opencv2/gpu/gpu.hpp>
-//#include "opencv2/nonfree/gpu.hpp"
+#include "opencv2/nonfree/gpu.hpp"
 #include "global.h"
 
+#if 0
 #include "package_bgs/FrameDifferenceBGS.h"
 #include "package_bgs/StaticFrameDifferenceBGS.h"
 #include "package_bgs/WeightedMovingMeanBGS.h"
@@ -55,13 +56,14 @@
 
 #include "package_bgs/pl/SuBSENSE.h"
 #include "package_bgs/pl/LOBSTER.h"
+#endif
 
 using namespace std;
 using namespace cv;
 
 struct thread_t cvData;
 
-void bayer10toRGB(unsigned int width, unsigned int height, void *input, void *output);
+//void bayer10toRGB(unsigned int width, unsigned int height, void *input, void *output);
 
 void cvThread()
 {
@@ -73,6 +75,7 @@ void cvThread()
 	}
 	gpu::setDevice(0);
 
+#if 0
 	/* Background Subtraction Methods */
 	IBGS *bgs;
 
@@ -139,6 +142,7 @@ void cvThread()
 	/*** PL Package (thanks to Pierre-Luc) ***/
 	//bgs = new SuBSENSEBGS();
 	//bgs = new LOBSTERBGS();
+#endif
 
 	Mat img_input(status.height, status.width, CV_8UC3);
 	Mat img_mask;
@@ -147,7 +151,14 @@ void cvThread()
 	gpu::GpuMat *raw = new gpu::GpuMat(status.height, status.width, CV_16UC1);
 	gpu::GpuMat *rawu8 = new gpu::GpuMat(status.height, status.width, CV_8UC1);
 	gpu::GpuMat *img = new gpu::GpuMat(status.height, status.width, CV_8UC3);
+#if 0
 	gpu::GpuMat *img_s = new gpu::GpuMat(status.height / 2, status.width / 2, CV_8UC3);
+#endif
+	gpu::GpuMat *fgmask = new gpu::GpuMat;
+#endif
+
+#if 1
+	gpu::VIBE_GPU *vibe = new gpu::VIBE_GPU;
 #endif
 
 	// Waiting for ready start
@@ -155,6 +166,7 @@ void cvThread()
 	cvData.mtx.unlock();
 
 	int64_t past = getTickCount(), count = 0;
+	unsigned long frameCount = 0;
 	while (status.request != REQUEST_QUIT) {
 		cvData.mtx.lock();
 		cvData.bufidx = bufidx;
@@ -171,10 +183,8 @@ void cvThread()
 
 		raw->convertTo(*rawu8, CV_8UC1, 1.f / 4.f);
 		gpu::cvtColor(*rawu8, *img, CV_BayerBG2RGB);
-		img->download(img_input);
-#if s0
+#if 0
 		gpu::resize(*img, *img_s, Size(), 0.5, 0.5);
-		img_s->download(img_input);
 #endif
 #else
 		bayer10toRGB(status.width, status.height, dev.buffers[cvData.bufidx].mem, img_input.data);
@@ -186,10 +196,28 @@ void cvThread()
 
 		if (raw->empty())
 			break;
+#if 0
+#if 1
+		img->download(img_input);
+#else
+		img_s->download(img_input);
+#endif
 		// by default, it shows automatically the foreground mask image
 		bgs->process(img_input, img_mask, img_bkgmodel);
+#else
+		if (frameCount == 10)
+			vibe->initialize(*img);
+		else if (frameCount > 10) {
+			(*vibe)(*img, *fgmask);
+#if 0
+			fgmask->download(img_mask);
+			imshow("mask", img_mask);
+#endif
+		}
+#endif
 
 		count++;
+		frameCount++;
 		int64_t now = getTickCount();
 		if (now - past > 3 * getTickFrequency()) {
 			float fps = (float)count / (now - past) * getTickFrequency();
@@ -198,15 +226,22 @@ void cvThread()
 			past = now;
 		}
 
-#if 1
+#if 0
 		if (waitKey(1) >= 0)
 			status.request = REQUEST_QUIT;
 #endif
 	}
 	status.request = REQUEST_QUIT;
 #if 1
-	delete raw;
-	delete rawu8;
+	if (frameCount >= 10)
+		vibe->release();
+	delete vibe;
+	delete fgmask;
+#if 0
+	delete img_s;
+#endif
 	delete img;
+	delete rawu8;
+	delete raw;
 #endif
 }
