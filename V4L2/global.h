@@ -5,11 +5,14 @@
 #include "yavta.h"
 #include "ov5647_v4l2.h"
 
-#define ENABLE_PV
+// Preview
+#define ENABLE_PV	1
+// OpenCV
+#define ENABLE_CV	1
 
 #define MAX_W		OV5647_MAX_W
 #define MAX_H		OV5647_MAX_H
-#define BUFFER_NUM	4
+#define BUFFER_NUM	(3 + ENABLE_PV + ENABLE_CV)
 
 enum {	REQUEST_NONE = 0x00,
 	REQUEST_CAPTURE,
@@ -29,11 +32,17 @@ extern struct status_t {
 extern struct device dev;
 extern volatile unsigned int bufidx;
 
-extern struct thread_t {
+struct thread_t {
 	std::mutex mtx;
 	volatile int bufidx;
 	volatile int err;
-} pvData, cvData;
+};
+#if ENABLE_PV
+extern struct thread_t pvData;
+#endif
+#if ENABLE_CV
+extern struct thread_t cvData;
+#endif
 
 void inputThread();
 void cvThread();

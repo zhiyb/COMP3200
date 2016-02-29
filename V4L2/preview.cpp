@@ -157,6 +157,9 @@ void pvThread()
 		pvData.bufidx = bufidx;
 		pvData.mtx.unlock();
 		glBufferSubData(GL_PIXEL_UNPACK_BUFFER, 0, status.width * status.height * 2, dev.buffers[pvData.bufidx].mem);
+		pvData.mtx.lock();
+		pvData.bufidx = -1;
+		pvData.mtx.unlock();
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, status.width, status.height, GL_RED_INTEGER,
 				GL_UNSIGNED_SHORT, 0);
 

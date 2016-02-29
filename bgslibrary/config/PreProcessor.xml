@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <opencv_storage>
 <equalizeHist>0</equalizeHist>
-<gaussianBlur>1</gaussianBlur>
-<enableShow>1</enableShow>
+<gaussianBlur>0</gaussianBlur>
+<enableShow>0</enableShow>
 </opencv_storage>

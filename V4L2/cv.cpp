@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <opencv2/opencv.hpp>
 #include <opencv2/gpu/gpu.hpp>
+//#include "opencv2/nonfree/gpu.hpp"
 #include "global.h"
 
 #include "package_bgs/FrameDifferenceBGS.h"
@@ -33,6 +34,7 @@
 #include "package_bgs/tb/FuzzyChoquetIntegral.h"
 
 #include "package_bgs/lb/LBSimpleGaussian.h"
+#include "package_bgs/AdaptiveBackgroundLearning.h"
 #include "package_bgs/lb/LBFuzzyGaussian.h"
 #include "package_bgs/lb/LBMixtureOfGaussians.h"
 #include "package_bgs/lb/LBAdaptiveSOM.h"
@@ -45,6 +47,7 @@
 // http://www2.ulg.ac.be/telecom/research/vibe/
 //#include "package_bgs/pt/PixelBasedAdaptiveSegmenter.h"
 #include "package_bgs/av/VuMeter.h"
+#include "package_bgs/AdaptiveBackgroundLearning.h"
 #include "package_bgs/ae/KDE.h"
 #include "package_bgs/db/IndependentMultimodalBGS.h"
 #include "package_bgs/sjn/SJN_MultiCueBGS.h"
@@ -58,10 +61,12 @@ using namespace cv;
 
 struct thread_t cvData;
 
+void bayer10toRGB(unsigned int width, unsigned int height, void *input, void *output);
+
 void cvThread()
 {
 	// OpenCV GPU
-	cout << __func__ << ": Cuda devices: " << gpu::getCudaEnabledDeviceCount() << endl;
+	//cout << __func__ << ": Cuda devices: " << gpu::getCudaEnabledDeviceCount() << endl;
 	if (gpu::getCudaEnabledDeviceCount() == 0) {
 		status.request = REQUEST_QUIT;
 		return;
@@ -70,17 +75,80 @@ void cvThread()
 
 	/* Background Subtraction Methods */
 	IBGS *bgs;
+
 	/*** Default Package ***/
 	//bgs = new FrameDifferenceBGS;
+	//bgs = new StaticFrameDifferenceBGS;
+	//bgs = new WeightedMovingMeanBGS;
+	//bgs = new WeightedMovingVarianceBGS;
+	//bgs = new MixtureOfGaussianV1BGS;
+	bgs = new MixtureOfGaussianV2BGS;
+	//bgs = new AdaptiveBackgroundLearning;
+	//bgs = new AdaptiveSelectiveBackgroundLearning;
+	//bgs = new GMG;
+
+	/*** DP Package (thanks to Donovan Parks) ***/
+	//bgs = new DPAdaptiveMedianBGS;
+	//bgs = new DPGrimsonGMMBGS;
+	//bgs = new DPZivkovicAGMMBGS;
+	//bgs = new DPMeanBGS;
+	//bgs = new DPWrenGABGS;
+	//bgs = new DPPratiMediodBGS;
+	//bgs = new DPEigenbackgroundBGS;
+	//bgs = new DPTextureBGS;
+
+	/*** TB Package (thanks to Thierry Bouwmans, Fida EL BAF and Zhenjie Zhao) ***/
+	//bgs = new T2FGMM_UM;
+	//bgs = new T2FGMM_UV;
+	//bgs = new T2FMRF_UM;
+	//bgs = new T2FMRF_UV;
+	//bgs = new FuzzySugenoIntegral;
+	//bgs = new FuzzyChoquetIntegral;
+
 	/*** JMO Package (thanks to Jean-Marc Odobez) ***/
-	bgs = new MultiLayerBGS;
+	//bgs = new MultiLayerBGS;
+
+	/*** PT Package (thanks to Martin Hofmann, Philipp Tiefenbacher and Gerhard Rigoll) ***/
+	//bgs = new PixelBasedAdaptiveSegmenter;
+
+	/*** LB Package (thanks to Laurence Bender) ***/
+	//bgs = new LBSimpleGaussian;
+	//bgs = new LBFuzzyGaussian;
+	//bgs = new LBMixtureOfGaussians;
+	//bgs = new LBAdaptiveSOM;
+	//bgs = new LBFuzzyAdaptiveSOM;
+
+	/*** LBP-MRF Package (thanks to Csaba Kertész) ***/
+	//bgs = new LbpMrf;
+
+	/*** AV Package (thanks to Lionel Robinault and Antoine Vacavant) ***/
+	//bgs = new VuMeter;
+
+	/*** EG Package (thanks to Ahmed Elgammal) ***/
+	//bgs = new KDE;
+
+	/*** DB Package (thanks to Domenico Daniele Bloisi) ***/
+	//bgs = new IndependentMultimodalBGS;
+
+	/*** SJN Package (thanks to SeungJong Noh) ***/
+	//bgs = new SJN_MultiCueBGS;
+
+	/*** BL Package (thanks to Benjamin Laugraud) ***/
+	//bgs = new SigmaDeltaBGS;
+
+	/*** PL Package (thanks to Pierre-Luc) ***/
+	//bgs = new SuBSENSEBGS();
+	//bgs = new LOBSTERBGS();
 
 	Mat img_input(status.height, status.width, CV_8UC3);
 	Mat img_mask;
 	Mat img_bkgmodel;
-	gpu::GpuMat *raw;
-	gpu::GpuMat *rawu8;
-	gpu::GpuMat *img;
+#if 1
+	gpu::GpuMat *raw = new gpu::GpuMat(status.height, status.width, CV_16UC1);
+	gpu::GpuMat *rawu8 = new gpu::GpuMat(status.height, status.width, CV_8UC1);
+	gpu::GpuMat *img = new gpu::GpuMat(status.height, status.width, CV_8UC3);
+	gpu::GpuMat *img_s = new gpu::GpuMat(status.height / 2, status.width / 2, CV_8UC3);
+#endif
 
 	// Waiting for ready start
 	cvData.mtx.lock();
@@ -88,29 +156,36 @@ void cvThread()
 
 	int64_t past = getTickCount(), count = 0;
 	while (status.request != REQUEST_QUIT) {
-		raw = new gpu::GpuMat();
 		cvData.mtx.lock();
 		cvData.bufidx = bufidx;
 		cvData.mtx.unlock();
-		raw->upload(Mat(status.height, status.width, CV_16UC1, dev.buffers[cvData.bufidx].mem));
+#if 1
 		if (raw->empty())
 			break;
+		raw->upload(Mat(status.height, status.width, CV_16UC1, dev.buffers[cvData.bufidx].mem));
+#if 1
 		cvData.mtx.lock();
 		cvData.bufidx = -1;
 		cvData.mtx.unlock();
+#endif
 
-		rawu8 = new gpu::GpuMat();
 		raw->convertTo(*rawu8, CV_8UC1, 1.f / 4.f);
-		delete raw;
-
-		img = new gpu::GpuMat();
 		gpu::cvtColor(*rawu8, *img, CV_BayerBG2RGB);
-		delete rawu8;
-
 		img->download(img_input);
-		delete img;
-		imshow("cv_input", img_input);
+#if s0
+		gpu::resize(*img, *img_s, Size(), 0.5, 0.5);
+		img_s->download(img_input);
+#endif
+#else
+		bayer10toRGB(status.width, status.height, dev.buffers[cvData.bufidx].mem, img_input.data);
+		cvData.mtx.lock();
+		cvData.bufidx = -1;
+		cvData.mtx.unlock();
+#endif
+		//imshow("cv_input", img_input);
 
+		if (raw->empty())
+			break;
 		// by default, it shows automatically the foreground mask image
 		bgs->process(img_input, img_mask, img_bkgmodel);
 
@@ -123,8 +198,15 @@ void cvThread()
 			past = now;
 		}
 
+#if 1
 		if (waitKey(1) >= 0)
 			status.request = REQUEST_QUIT;
+#endif
 	}
 	status.request = REQUEST_QUIT;
+#if 1
+	delete raw;
+	delete rawu8;
+	delete img;
+#endif
 }

@@ -86,11 +86,12 @@ int main(int argc, char *argv[])
 	// Status
 	status.request = REQUEST_NONE;
 	status.swap = true;
+	unsigned int bufidxN = 0;
 	int err;
 
 	// Initialise V4L2
 	struct v4l2_buffer buf;
-	memset(&buf, sizeof(buf), 0);
+	//memset(&buf, sizeof(buf), 0);
 	if ((err = video_init(&dev, argv[1], status.pixelformat, MAX_W, MAX_H, BUFFER_NUM)) != 0)
 		return err;
 	if ((err = video_set_format(&dev, status.width, status.height, status.pixelformat)) < 0) {
@@ -99,13 +100,15 @@ int main(int argc, char *argv[])
 	}
 
 	// Setup threads
-	cvData.mtx.lock();
-	pvData.mtx.lock();
 	bool locked = true;
 	thread tInput(inputThread);
+#if ENABLE_CV
+	cvData.mtx.lock();
 	thread tCV(cvThread);
 	cvData.bufidx = -1;
-#ifndef ENABLE_PV
+#endif
+#if ENABLE_PV
+	pvData.mtx.lock();
 	thread tPV(pvThread);
 	pvData.bufidx = -1;
 #endif
@@ -115,7 +118,6 @@ int main(int argc, char *argv[])
 	if ((err = video_enable(&dev, 1)) != 0)
 		goto failed;
 
-	unsigned int bufidxN;
 restart:
 	if (status.swap) {
 		setLED(1);
@@ -143,28 +145,27 @@ restart:
 		for (unsigned int i = 0; i < BUFFER_NUM; i++)
 			if (i != bufidx && bufstatus[i] != Queued)
 				bufstatus[i] = Free;
-		if (!locked) {
-#ifndef ENABLE_PV
-			pvData.mtx.lock();
-#endif
+#if ENABLE_CV
+		if (!locked)
 			cvData.mtx.lock();
-		}
-#ifndef ENABLE_PV
-		if (pvData.bufidx != -1)
-			bufstatus[pvData.bufidx] = Used;
-#endif
 		if (cvData.bufidx != -1)
 			bufstatus[cvData.bufidx] = Used;
-#ifndef ENABLE_PV
+		cvData.mtx.unlock();
+#endif
+#if ENABLE_PV
+		if (!locked)
+			pvData.mtx.lock();
+		if (pvData.bufidx != -1)
+			bufstatus[pvData.bufidx] = Used;
 		pvData.mtx.unlock();
 #endif
-		cvData.mtx.unlock();
 		for (unsigned int i = 0; i < BUFFER_NUM; i++)
 			if (bufstatus[i] == Free) {
 				buf.index = i;
 				if ((err = video_buffer_requeue(&dev, &buf)) != 0)
 					goto captureFailed;
 				bufstatus[i] = Queued;
+				break;
 			}
 		locked = false;
 
@@ -200,16 +201,16 @@ captureFailed:
 failed:
 	status.request = REQUEST_QUIT;
 	printf("%s: quitting\n", __func__);
-	if (locked) {
-#ifndef ENABLE_PV
+#if ENABLE_PV
+	if (locked)
 		pvData.mtx.unlock();
-#endif
-		cvData.mtx.unlock();
-	}
-#ifndef ENABLE_PV
 	tPV.join();
 #endif
+#if ENABLE_CV
+	if (locked)
+		cvData.mtx.unlock();
 	tCV.join();
+#endif
 	tInput.detach();
 	video_close(&dev);
 	return err;
