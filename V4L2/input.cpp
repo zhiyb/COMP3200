@@ -14,7 +14,7 @@ using namespace std;
 
 #define FUNC_DBG	ESC_GREY << __func__ << ": "
 
-void writeRegister(const bool word, const unsigned int addr, const unsigned int value)
+static void writeRegister(const bool word, const unsigned int addr, const unsigned int value)
 {
 	//cout << FUNC_DBG << ESC_BLUE;
 	uint32_t val = (word ? OV5647_CID_REG_WMASK : 0) | ((uint32_t)addr << 16) | value;
@@ -30,7 +30,7 @@ void writeRegister(const bool word, const unsigned int addr, const unsigned int 
 #endif
 }
 
-void readRegister(const bool word, const unsigned int addr)
+static void readRegister(const bool word, const unsigned int addr)
 {
 	cout << FUNC_DBG << ESC_BLUE;
 	uint32_t val = (word ? OV5647_CID_REG_WMASK : 0) | ((uint32_t)addr << 16);
@@ -47,7 +47,22 @@ void readRegister(const bool word, const unsigned int addr)
 	cout << endl;
 }
 
-void resolution()
+static void fixed(const bool e)
+{
+	if (e) {
+		// AGC AEC manual
+		writeRegister(false, 0x3503, 3);
+		// AWB auto
+		writeRegister(false, 0x5001, 0);
+		cout << FUNC_DBG << ESC_CYAN << "Disabled auto AGC, AEC, AWD" << endl;
+	} else {
+		writeRegister(false, 0x3503, 0);
+		writeRegister(false, 0x5001, 1);
+		cout << FUNC_DBG << ESC_CYAN << "Enabled auto AGC, AEC, AWD" << endl;
+	}
+}
+
+static void resolution()
 {
 }
 
@@ -85,6 +100,11 @@ loop:
 	} else if (cmd == "swap") {
 		cout << "Change to " << (status.swap ? "non " : "") << "swapping capture" << endl;
 		status.request = REQUEST_SWAP;
+	} else if (cmd == "fixed") {
+		unsigned int e;
+		if (!(sstr >> e))
+			goto loop;
+		fixed(e);
 	} else if (cmd == "res") {
 		resolution();
 	} else if (cmd == "cap") {

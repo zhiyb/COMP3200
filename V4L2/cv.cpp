@@ -168,6 +168,7 @@ void cvThread()
 	int64_t past = getTickCount(), count = 0;
 	unsigned long frameCount = 0;
 	while (status.request != REQUEST_QUIT) {
+		cvData.wait();
 		cvData.mtx.lock();
 		cvData.bufidx = bufidx;
 		cvData.mtx.unlock();
@@ -183,6 +184,9 @@ void cvThread()
 
 		raw->convertTo(*rawu8, CV_8UC1, 1.f / 4.f);
 		gpu::cvtColor(*rawu8, *img, CV_BayerBG2RGB);
+#if 1
+		gpu::GaussianBlur(*img, *img, Size(5, 5), 1.5);
+#endif
 #if 0
 		gpu::resize(*img, *img_s, Size(), 0.5, 0.5);
 #endif
@@ -193,9 +197,6 @@ void cvThread()
 		cvData.mtx.unlock();
 #endif
 		//imshow("cv_input", img_input);
-
-		if (raw->empty())
-			break;
 #if 0
 #if 1
 		img->download(img_input);
@@ -209,8 +210,12 @@ void cvThread()
 			vibe->initialize(*img);
 		else if (frameCount > 10) {
 			(*vibe)(*img, *fgmask);
-#if 0
+#if 1
+			//gpu::blur(*fgmask, *fgmask, Size(5, 5));
+#endif
+#if 1
 			fgmask->download(img_mask);
+			medianBlur(img_mask, img_mask, 5);
 			imshow("mask", img_mask);
 #endif
 		}
@@ -226,7 +231,7 @@ void cvThread()
 			past = now;
 		}
 
-#if 0
+#if 1
 		if (waitKey(1) >= 0)
 			status.request = REQUEST_QUIT;
 #endif

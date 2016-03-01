@@ -96,7 +96,7 @@ void pvThread()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 	window = glfwCreateWindow(status.width, status.height, "Hello World", NULL, NULL);
-	glfwSetWindowPos(window, status.width, 0);
+	glfwSetWindowPos(window, 0, 0);
 	if (!window) {
 		glfwTerminate();
 		pvData.err = -2;
@@ -152,6 +152,7 @@ void pvThread()
 
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window) && status.request != REQUEST_QUIT) {
+		pvData.wait();
 		//dev.buffers[buf.index].mem, buf.bytesused;
 		pvData.mtx.lock();
 		pvData.bufidx = bufidx;

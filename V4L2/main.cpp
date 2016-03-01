@@ -140,6 +140,12 @@ restart:
 		} else
 			bufidx = buf.index;
 		bufstatus[bufidx] = Captured;
+#if ENABLE_CV
+		cvData.notify();
+#endif
+#if ENABLE_PV
+		pvData.notify();
+#endif
 
 		// Refresh buffer status
 		for (unsigned int i = 0; i < BUFFER_NUM; i++)

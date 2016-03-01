@@ -2,6 +2,7 @@
 #define GLOBAL_H
 
 #include <mutex>
+#include <condition_variable>
 #include "yavta.h"
 #include "ov5647_v4l2.h"
 
@@ -36,6 +37,24 @@ struct thread_t {
 	std::mutex mtx;
 	volatile int bufidx;
 	volatile int err;
+
+	std::mutex sync_mtx;
+	std::condition_variable sync_cv;
+	bool ready;
+
+	void notify()
+	{
+		std::unique_lock<std::mutex> lock(sync_mtx);
+		ready = true;
+		sync_cv.notify_all();
+	}
+	void wait()
+	{
+		std::unique_lock<std::mutex> lock(sync_mtx);
+		while (!ready)
+			sync_cv.wait(lock);
+		ready = false;
+	}
 };
 #if ENABLE_PV
 extern struct thread_t pvData;

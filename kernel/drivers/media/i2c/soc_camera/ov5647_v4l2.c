@@ -369,33 +369,24 @@ static struct ov5647_reg mode_1280x720[] = {	// ~61 FPS
 	{OV5647_TABLE_END, 0x00}
 };
 
+static u8 ov5647_seq_640x480[] = {	// ~97 FPS
+	0x38, 0x00,	// Register start address
+	0x00, 0x10,	// x_addr_start
+	0x00, 0x00,	// y_addr_start
+	0x0a, 0x2f,	// x_addr_end
+	0x07, 0x9f,	// y_addr_end
+	0x02, 0x80,	// DVP out horizontal
+	0x01, 0xe0,	// DVP out vertical
+	0x06, 0x96,	// Horizontal total size
+	0x01, 0xef,	// Vertical total size
+	0x00, 0x00,	// ISP horizontal offset
+	0x00, 0x00,	// ISP vertical offset
+	0x71,		// X_INC
+	0x71,		// Y_INC
+};
+
 static struct ov5647_reg mode_640x480[] = {	// ~87 FPS
-	{0x3800, 0x00},	// x_addr_start
-	{0x3801, 0x10},
-	{0x3802, 0x00},	// y_addr_start
-	{0x3803, 0x00},
-	{0x3804, 0x0a},	// x_addr_end
-	{0x3805, 0x2f},
-	{0x3806, 0x07},	// y_addr_end
-	{0x3807, 0x9f},
-
-	{0x3808, 0x02},	// DVP out horizontal
-	{0x3809, 0x80},
-	{0x380a, 0x01},	// DVP out vertical
-	{0x380b, 0xe0},
-
-	{0x380c, 0x07},	// Horizontal total size
-	{0x380d, 0x3c},
-	{0x380e, 0x01},	// Vertical total size
-	{0x380f, 0xf8},
-#if 0
-	{0x3810, 0x00},	// ISP horizontal offset
-	{0x3811, 0x00},
-	{0x3812, 0x00},	// ISP vertical offset
-	{0x3813, 0x00},
-#endif
-	{0x3814, 0x71},	// X_INC
-	{0x3815, 0x71},	// Y_INC
+	{OV5647_TABLE_SEQ, OV5647_SEQ_640X480},
 	{0x3820, 0x47},	// Vertical binning/flip
 	{0x3821, 0x01},	// Horizontal binning/mirror
 
@@ -441,6 +432,7 @@ struct ov5647_seq {
 static const struct ov5647_seq ov5647_seq_table[] = {
 	[OV5647_SEQ_2592X1944] = OV5647_SEQ(ov5647_seq_2592x1944),
 	[OV5647_SEQ_1920X1080] = OV5647_SEQ(ov5647_seq_1920x1080),
+	[OV5647_SEQ_640X480] = OV5647_SEQ(ov5647_seq_640x480),
 	[OV5647_SEQ_NO_BINNING] = OV5647_SEQ(ov5647_seq_no_binning),
 };
 
