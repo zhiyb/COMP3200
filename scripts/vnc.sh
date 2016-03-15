@@ -3,7 +3,7 @@ export DISPLAY=:0
 if (($# != 0)); then
 	xrandr --fb $@
 else
-	xrandr --fb 1400x800
+	:#xrandr --fb 1400x800
 fi
 xrandr
 x11vnc -alwaysshared -threads -forever
