@@ -168,7 +168,6 @@ void cvThread()
 	int64_t past = getTickCount(), count = 0;
 	unsigned long frameCount = 0;
 	while (status.request != REQUEST_QUIT) {
-		cvData.wait();
 		cvData.mtx.lock();
 		cvData.bufidx = bufidx;
 		cvData.mtx.unlock();
@@ -198,7 +197,7 @@ void cvThread()
 #endif
 		//imshow("cv_input", img_input);
 #if 0
-#if 1
+#if 1Enable
 		img->download(img_input);
 #else
 		img_s->download(img_input);
@@ -210,13 +209,18 @@ void cvThread()
 			vibe->initialize(*img);
 		else if (frameCount > 10) {
 			(*vibe)(*img, *fgmask);
-#if 1
-			//gpu::blur(*fgmask, *fgmask, Size(5, 5));
+#if 0
+			gpu::blur(*fgmask, *fgmask, Size(5, 5));
 #endif
 #if 1
 			fgmask->download(img_mask);
+#endif
+#if 0
 			medianBlur(img_mask, img_mask, 5);
-			imshow("mask", img_mask);
+#endif
+#if 1
+			if (status.cvShow)
+				imshow("mask", img_mask);
 #endif
 		}
 #endif
@@ -232,9 +236,10 @@ void cvThread()
 		}
 
 #if 1
-		if (waitKey(1) >= 0)
+		if (status.cvShow && waitKey(1) >= 0)
 			status.request = REQUEST_QUIT;
 #endif
+		cvData.wait();
 	}
 	status.request = REQUEST_QUIT;
 #if 1

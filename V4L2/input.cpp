@@ -68,6 +68,7 @@ static void resolution()
 
 void inputThread()
 {
+	writeRegister(false, 0, 0);
 	string str;
 	cin >> hex;
 	cout << hex;
@@ -105,6 +106,16 @@ loop:
 		if (!(sstr >> e))
 			goto loop;
 		fixed(e);
+	} else if (cmd == "pv") {
+		unsigned int e;
+		if (!(sstr >> e))
+			goto loop;
+		status.pvUpdate = e;
+	} else if (cmd == "cv") {
+		unsigned int e;
+		if (!(sstr >> e))
+			goto loop;
+		status.cvShow = e;
 	} else if (cmd == "res") {
 		resolution();
 	} else if (cmd == "cap") {

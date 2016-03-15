@@ -24,7 +24,7 @@ enum {	REQUEST_NONE = 0x00,
 extern struct status_t {
 	unsigned int width, height, pixelformat;
 	volatile unsigned int request;
-	volatile bool swap;
+	volatile bool swap, pvUpdate, cvShow;
 	// Video, CV, Preview FPS
 	volatile float vFPS, cvFPS, pvFPS;
 } status;

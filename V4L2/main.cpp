@@ -86,6 +86,8 @@ int main(int argc, char *argv[])
 	// Status
 	status.request = REQUEST_NONE;
 	status.swap = true;
+	status.pvUpdate = true;
+	status.cvShow = true;
 	unsigned int bufidxN = 0;
 	int err;
 
@@ -144,7 +146,8 @@ restart:
 		cvData.notify();
 #endif
 #if ENABLE_PV
-		pvData.notify();
+		if (status.pvUpdate)
+			pvData.notify();
 #endif
 
 		// Refresh buffer status
@@ -205,11 +208,13 @@ restart:
 captureFailed:
 	video_enable(&dev, 0);
 failed:
+	video_close(&dev);
 	status.request = REQUEST_QUIT;
 	printf("%s: quitting\n", __func__);
 #if ENABLE_PV
 	if (locked)
 		pvData.mtx.unlock();
+	pvData.notify();
 	tPV.join();
 #endif
 #if ENABLE_CV
@@ -218,6 +223,5 @@ failed:
 	tCV.join();
 #endif
 	tInput.detach();
-	video_close(&dev);
 	return err;
 }

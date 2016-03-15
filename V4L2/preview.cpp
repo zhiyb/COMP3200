@@ -152,7 +152,6 @@ void pvThread()
 
 	/* Loop until the user closes the window */
 	while (!glfwWindowShouldClose(window) && status.request != REQUEST_QUIT) {
-		pvData.wait();
 		//dev.buffers[buf.index].mem, buf.bytesused;
 		pvData.mtx.lock();
 		pvData.bufidx = bufidx;
@@ -183,6 +182,7 @@ void pvThread()
 		}
 
 		/* Poll for and process events */
+		pvData.wait();
 		glfwPollEvents();
 	}
 }
