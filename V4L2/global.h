@@ -25,35 +25,68 @@ extern struct status_t {
 	unsigned int width, height, pixelformat;
 	volatile unsigned int request;
 	volatile bool swap, pvUpdate, cvShow;
-	// Video, CV, Preview FPS
-	volatile float vFPS, cvFPS, pvFPS;
+	// Video, Preview, CV FPS
+	volatile float vFPS, pvFPS, cvFPS_GPU, cvFPS_CPU, cvFPS_disp;
 } status;
 
 // V4L2
 extern struct device dev;
 extern volatile unsigned int bufidx;
 
+class semaphore_t
+{
+public:
+	std::unique_lock<std::mutex> lock()
+	{
+		return std::unique_lock<std::mutex>(mtx);
+	}
+	void unlock(std::unique_lock<std::mutex> &locker)
+	{
+		if (locker.owns_lock()) {
+			locker.unlock();
+			locker.release();
+		}
+	}
+	void notify()
+	{
+		//std::unique_lock<std::mutex> lock(mtx);
+		//ready = true;
+		cvar.notify_all();
+	}
+	void wait(std::unique_lock<std::mutex> &locker)
+	{
+		//while (!ready)
+			cvar.wait(locker);
+		//ready = false;
+	}
+
+private:
+	std::mutex mtx;
+	std::condition_variable cvar;
+	//bool ready;
+};
+
 struct thread_t {
 	std::mutex mtx;
 	volatile int bufidx;
 	volatile int err;
+	semaphore_t smpr;
 
-	std::mutex sync_mtx;
-	std::condition_variable sync_cv;
 	bool ready;
-
 	void notify()
 	{
-		std::unique_lock<std::mutex> lock(sync_mtx);
+		std::unique_lock<std::mutex> locker = smpr.lock();
 		ready = true;
-		sync_cv.notify_all();
+		smpr.notify();
+		smpr.unlock(locker);
 	}
 	void wait()
 	{
-		std::unique_lock<std::mutex> lock(sync_mtx);
+		std::unique_lock<std::mutex> locker = smpr.lock();
 		while (!ready)
-			sync_cv.wait(lock);
+			smpr.wait(locker);
 		ready = false;
+		smpr.unlock(locker);
 	}
 };
 #if ENABLE_PV

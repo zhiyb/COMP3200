@@ -84,7 +84,9 @@ loop:
 	if (cmd == "fps") {
 		cout << "  Video: " << status.vFPS << endl;
 		cout << "Preview: " << status.pvFPS << endl;
-		cout << "     CV: " << status.cvFPS << endl;
+		cout << " CV GPU: " << status.cvFPS_GPU << endl;
+		cout << " CV CPU: " << status.cvFPS_CPU << endl;
+		cout << "CV disp: " << status.cvFPS_disp << endl;
 	} else if (cmd == "rb" || (word = (cmd == "rw"))) {
 		unsigned int addr;
 		if (!(sstr >> addr))

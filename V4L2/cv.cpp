@@ -3,6 +3,7 @@
 #include <opencv2/gpu/gpu.hpp>
 #include "opencv2/nonfree/gpu.hpp"
 #include "global.h"
+#include "cv_private.h"
 
 #if 0
 #include "package_bgs/FrameDifferenceBGS.h"
@@ -61,20 +62,9 @@
 using namespace std;
 using namespace cv;
 
-struct thread_t cvData;
-
-//void bayer10toRGB(unsigned int width, unsigned int height, void *input, void *output);
-
-void cvThread()
+// OpenCV CPU post processing
+void cvThread_CPU()
 {
-	// OpenCV GPU
-	//cout << __func__ << ": Cuda devices: " << gpu::getCudaEnabledDeviceCount() << endl;
-	if (gpu::getCudaEnabledDeviceCount() == 0) {
-		status.request = REQUEST_QUIT;
-		return;
-	}
-	gpu::setDevice(0);
-
 #if 0
 	/* Background Subtraction Methods */
 	IBGS *bgs;
@@ -144,114 +134,35 @@ void cvThread()
 	//bgs = new LOBSTERBGS();
 #endif
 
-	Mat img_input(status.height, status.width, CV_8UC3);
-	Mat img_mask;
-	Mat img_bkgmodel;
-#if 1
-	gpu::GpuMat *raw = new gpu::GpuMat(status.height, status.width, CV_16UC1);
-	gpu::GpuMat *rawu8 = new gpu::GpuMat(status.height, status.width, CV_8UC1);
-	gpu::GpuMat *img = new gpu::GpuMat(status.height, status.width, CV_8UC3);
-#if 0
-	gpu::GpuMat *img_s = new gpu::GpuMat(status.height / 2, status.width / 2, CV_8UC3);
-#endif
-	gpu::GpuMat *fgmask = new gpu::GpuMat;
-#endif
-
-#if 1
-	gpu::VIBE_GPU *vibe = new gpu::VIBE_GPU;
-#endif
-
-	// Waiting for ready start
-	cvData.mtx.lock();
-	cvData.mtx.unlock();
-
+	std::unique_lock<std::mutex> locker;
 	int64_t past = getTickCount(), count = 0;
 	unsigned long frameCount = 0;
-	while (status.request != REQUEST_QUIT) {
-		cvData.mtx.lock();
-		cvData.bufidx = bufidx;
-		cvData.mtx.unlock();
-#if 1
-		if (raw->empty())
+	while (1) {
+		locker = cv_gpu.smpr.lock();
+		cv_gpu.smpr.wait(locker);
+		Mat input(cv_gpu.input);
+		Mat mask(cv_gpu.mask);
+		cv_gpu.smpr.unlock(locker);
+		if (status.request & REQUEST_QUIT)
 			break;
-		raw->upload(Mat(status.height, status.width, CV_16UC1, dev.buffers[cvData.bufidx].mem));
-#if 1
-		cvData.mtx.lock();
-		cvData.bufidx = -1;
-		cvData.mtx.unlock();
-#endif
+		if (input.empty())
+			continue;
 
-		raw->convertTo(*rawu8, CV_8UC1, 1.f / 4.f);
-		gpu::cvtColor(*rawu8, *img, CV_BayerBG2RGB);
-#if 1
-		gpu::GaussianBlur(*img, *img, Size(5, 5), 1.5);
-#endif
-#if 0
-		gpu::resize(*img, *img_s, Size(), 0.5, 0.5);
-#endif
-#else
-		bayer10toRGB(status.width, status.height, dev.buffers[cvData.bufidx].mem, img_input.data);
-		cvData.mtx.lock();
-		cvData.bufidx = -1;
-		cvData.mtx.unlock();
-#endif
-		//imshow("cv_input", img_input);
-#if 0
-#if 1Enable
-		img->download(img_input);
-#else
-		img_s->download(img_input);
-#endif
-		// by default, it shows automatically the foreground mask image
-		bgs->process(img_input, img_mask, img_bkgmodel);
-#else
-		if (frameCount == 10)
-			vibe->initialize(*img);
-		else if (frameCount > 10) {
-			(*vibe)(*img, *fgmask);
-#if 0
-			gpu::blur(*fgmask, *fgmask, Size(5, 5));
-#endif
-#if 1
-			fgmask->download(img_mask);
-#endif
-#if 0
-			medianBlur(img_mask, img_mask, 5);
-#endif
-#if 1
-			if (status.cvShow)
-				imshow("mask", img_mask);
-#endif
-		}
-#endif
+		if (status.cvShow)
+			imshow("mask", mask);
 
 		count++;
 		frameCount++;
 		int64_t now = getTickCount();
 		if (now - past > 3 * getTickFrequency()) {
 			float fps = (float)count / (now - past) * getTickFrequency();
-			status.cvFPS = fps;
+			status.cvFPS_disp = status.cvFPS_CPU = fps;
 			count = 0;
 			past = now;
 		}
 
-#if 1
 		if (status.cvShow && waitKey(1) >= 0)
-			status.request = REQUEST_QUIT;
-#endif
-		cvData.wait();
+			break;
 	}
 	status.request = REQUEST_QUIT;
-#if 1
-	if (frameCount >= 10)
-		vibe->release();
-	delete vibe;
-	delete fgmask;
-#if 0
-	delete img_s;
-#endif
-	delete img;
-	delete rawu8;
-	delete raw;
-#endif
 }
