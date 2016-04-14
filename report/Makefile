@@ -6,7 +6,7 @@ all: $(PDF)
 
 %.pdf: %.tex
 	pdflatex --shell-escape $<
-	bibtex $(<:%.tex=%.aux)
+	-bibtex $(<:%.tex=%.aux)
 	pdflatex --shell-escape $<
 	pdflatex --shell-escape $<
 

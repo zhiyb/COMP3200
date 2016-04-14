@@ -18,14 +18,14 @@ Specific camera module to be used was not determined yet at the time this progre
 
 \subsection{Testing platform}
 
-The computer vision algorithms that are platform and hardware independent were firstly tested on a generic laptop with built in webcam running Microsoft Windows, mainly because it was easier for user interaction and parameter tunning.
+The computer vision algorithms that are platform and hardware independent were firstly tested on a generic laptop with built in webcam running Microsoft Windows, mainly because it was easier for user interaction and parameter tuning.
 
 \section{Software interfaces}
 
 \subsection{Embedded operating system}
 
-Ubuntu Linux distribution version 14.04.1 LTS was used on the platform, installed directly from the filesystem image provided by NVIDIA. Linux is great for this project because it is fully configurable, so that operating system overheads can be reduced to minimum by disabling unused services and even the graphical desktop environment. Also most Linux operations could be done through just command line interface, perhaps via a SSH shell access, therefore programming and control the platform could be done anywhere with internet connection, which is very convenient.
+Ubuntu Linux distribution version 14.04.1 LTS was used on the platform, installed directly from the file system image provided by NVIDIA. Linux is great for this project because it is fully configurable, so that operating system overheads can be reduced to minimum by disabling unused services and even the graphical desktop environment. Also most Linux operations could be done through just command line interface, perhaps via a SSH shell access, therefore programming and control the platform could be done anywhere with internet connection, which is very convenient.
 
 \subsection{Computer vision API}
 
-OpenCV \cite{opencv} was used to implement the algorithms, due to its cross platform adaptability, easy to use and large number of existing algorithms ready for use and investigation. Furthermore, the OpenCV library for Jetson platform developed by NVIDIA was further optimised, can provide 2x-5x speedup compare to regular OpenCV \cite{NVIDIA:perf}. The OpenCV GPU module based on NVIDIA CUDA was also available, can provide 5x-20x speedup. These optimisations can reduce computation time dramatically, thus lower the power consumption further.
+OpenCV \cite{opencv} was used to implement the algorithms, due to its cross platform adaptability, easy to use and large number of existing algorithms ready for use and investigation. Furthermore, the OpenCV library for Jetson platform developed by NVIDIA was further optimised, can provide 2x-5x speed up compare to regular OpenCV \cite{NVIDIA:perf}. The OpenCV GPU module based on NVIDIA CUDA was also available, can provide 5x-20x speed up. These optimisations can reduce computation time dramatically, thus lower the power consumption further.
