@@ -1,0 +1,116 @@
+SRC	= helper.cpp main.cpp
+SRC	+= yavta.c
+SRC	+= cv.cpp
+SRC	+= cv_gpu.cpp
+#SRC	+= cv_cuda.cu
+SRC	+= preview.cpp
+SRC	+= input.cpp
+
+SRC	+= opencv2/precomp.cpp
+SRC	+= opencv2/vibe_gpu.cpp
+SRC	+= opencv2/vibe.cu
+
+BGSSRC	+= package_bgs/jmo/MultiLayerBGS.cpp \
+	   package_bgs/jmo/CMultiLayerBGS.cpp \
+	   package_bgs/jmo/LocalBinaryPattern.cpp \
+	   package_bgs/jmo/blob.cpp \
+	   package_bgs/jmo/BlobResult.cpp \
+	   package_bgs/jmo/BlobExtraction.cpp \
+	   package_bgs/lb/BGModel.cpp \
+	   package_bgs/lb/BGModelSom.cpp \
+	   package_bgs/lb/LBAdaptiveSOM.cpp \
+	   package_bgs/dp/AdaptiveMedianBGS.cpp \
+	   package_bgs/dp/DPAdaptiveMedianBGS.cpp \
+	   package_bgs/dp/DPEigenbackgroundBGS.cpp \
+	   package_bgs/dp/DPGrimsonGMMBGS.cpp \
+	   package_bgs/dp/DPMeanBGS.cpp \
+	   package_bgs/dp/DPPratiMediodBGS.cpp \
+	   package_bgs/dp/DPTextureBGS.cpp \
+	   package_bgs/dp/DPWrenGABGS.cpp \
+	   package_bgs/dp/DPZivkovicAGMMBGS.cpp \
+	   package_bgs/dp/Eigenbackground.cpp \
+	   package_bgs/dp/Error.cpp \
+	   package_bgs/dp/GrimsonGMM.cpp \
+	   package_bgs/dp/Image.cpp \
+	   package_bgs/dp/MeanBGS.cpp \
+	   package_bgs/dp/PratiMediodBGS.cpp \
+	   package_bgs/dp/TextureBGS.cpp \
+	   package_bgs/dp/WrenGA.cpp \
+	   package_bgs/dp/ZivkovicAGMM.cpp \
+	   package_bgs/GMG.cpp \
+	   package_bgs/FrameDifferenceBGS.cpp \
+	   package_bgs/StaticFrameDifferenceBGS.cpp \
+	   package_bgs/MixtureOfGaussianV1BGS.cpp \
+	   package_bgs/MixtureOfGaussianV2BGS.cpp \
+	   package_bgs/AdaptiveSelectiveBackgroundLearning.cpp \
+	   package_bgs/AdaptiveBackgroundLearning.cpp \
+	   package_bgs/WeightedMovingMeanBGS.cpp \
+	   package_bgs/WeightedMovingVarianceBGS.cpp
+#SRC	+= $(BGSSRC:%=bgslibrary/%)
+
+TRG	= V4L2
+DEV	= /dev/video0
+#RES	= 2592 1944
+#RES	= 1920 1080
+RES	= 1280 960
+#RES	= 640 480
+#RES	= 320 240
+
+OBJ	= $(subst .S,.o,$(subst .c,.o,$(subst .cpp,.o,$(SRC:.cu=.o))))
+CC	= gcc
+FLAGS	+= -g -pg -Wall -Ofast -mfpu=neon -funsafe-math-optimizations -fabi-version=8 -Wabi -march=armv7-a -fopenmp
+FLAGS	+= -I. -I/usr/local/cuda-6.5/targets/armv7-linux-gnueabihf/include
+FLAGS	+= -DHAVE_OPENCV_GPU -DHAVE_CUDA
+CFLAGS	+= $(FLAGS) -Ibgslibrary -Wno-unused-but-set-variable
+CXXFLAGS	+= $(FLAGS) -std=c++11 -Ibgslibrary -Wno-unused-but-set-variable
+LDFLAGS	+= -g -O2 -Xcompiler "-g -pg" -Xlinker "-g -pg"
+LDFLAGS	+= -lglfw3 -lGLEW -lGL
+LDFLAGS	+= -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_gpu -lopencv_video
+LDFLAGS	+= -lXxf86vm -lpthread -lXrandr -lXinerama -lXi -lXcursor -lX11 -ldl
+
+OS_SIZE    = $(shell uname -m | sed -e "s/x86_64/64/" -e "s/armv7l/32/" -e "s/aarch64/64/")
+OS_ARCH    = $(shell uname -m)
+ARCH_FLAGS =
+
+SMS = 50 52
+# Gencode arguments
+ifeq ($(OS_ARCH),armv7l)
+SMS ?= 20 30 32 35 37 50 52
+else
+SMS ?= 11 20 30 35 37 50 52
+endif
+
+ifeq ($(SMS),)
+$(info >>> WARNING - no SM architectures have been specified - waiving sample <<<)
+SAMPLE_ENABLED := 0
+endif
+
+ifeq ($(GENCODE_FLAGS),)
+# Generate SASS code for each SM architecture listed in $(SMS)
+$(foreach sm,$(SMS),$(eval GENCODE_FLAGS += -gencode arch=compute_$(sm),code=sm_$(sm)))
+
+# Generate PTX code from the highest SM architecture in $(SMS) to guarantee forward-compatibility
+HIGHEST_SM := $(lastword $(sort $(SMS)))
+ifneq ($(HIGHEST_SM),)
+GENCODE_FLAGS += -gencode arch=compute_$(HIGHEST_SM),code=compute_$(HIGHEST_SM)
+endif
+endif
+
+.PHONY: all
+all: $(TRG)
+
+$(TRG): $(OBJ)
+	/usr/local/cuda-6.5/bin/nvcc -ccbin g++ -m32 -Xcompiler -mfloat-abi=hard -Xlinker --dynamic-linker=/lib/ld-linux-armhf.so.3 $^ $(LDFLAGS) -o $@
+#$(CXX) $^ $(LDFLAGS) -o $@
+
+%.o: %.cu
+	/usr/local/cuda-6.5/bin/nvcc -ccbin g++ -m32 -Xcompiler "-g -pg" -Xcompiler -mfloat-abi=hard -po maxrregcount=16 $(GENCODE_FLAGS) -o $@ -c $<
+
+.PHONY: run
+run: $(TRG)
+	sync
+	DISPLAY=:0 ./$(TRG) $(DEV) $(RES)
+
+.PHONY: clean
+clean:
+	rm -f $(TRG) $(OBJ)

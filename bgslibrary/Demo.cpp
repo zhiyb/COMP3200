@@ -129,7 +129,7 @@ int main(int argc, char **argv)
   //bgs = new FuzzyChoquetIntegral;
 
   /*** JMO Package (thanks to Jean-Marc Odobez) ***/
-  //bgs = new MultiLayerBGS;
+  bgs = new MultiLayerBGS;
 
   /*** PT Package (thanks to Martin Hofmann, Philipp Tiefenbacher and Gerhard Rigoll) ***/
   //bgs = new PixelBasedAdaptiveSegmenter;
@@ -138,7 +138,7 @@ int main(int argc, char **argv)
   //bgs = new LBSimpleGaussian;
   //bgs = new LBFuzzyGaussian;
   //bgs = new LBMixtureOfGaussians;
-  bgs = new LBAdaptiveSOM;
+  //bgs = new LBAdaptiveSOM;
   //bgs = new LBFuzzyAdaptiveSOM;
 
   /*** LBP-MRF Package (thanks to Csaba Kertész) ***/
