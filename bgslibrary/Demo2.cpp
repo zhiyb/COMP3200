@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 	//bgs = new StaticFrameDifferenceBGS;
 	//bgs = new WeightedMovingMeanBGS;
 	//bgs = new WeightedMovingVarianceBGS;
-	//bgs = new MixtureOfGaussianV1BGS;
+	bgs = new MixtureOfGaussianV1BGS;
 	//bgs = new MixtureOfGaussianV2BGS;
 	//bgs = new AdaptiveBackgroundLearning;
 	//bgs = new AdaptiveSelectiveBackgroundLearning;
@@ -91,7 +91,7 @@ int main(int argc, char **argv)
 	//bgs = new DPGrimsonGMMBGS;
 	//bgs = new DPZivkovicAGMMBGS;
 	//bgs = new DPMeanBGS;
-	bgs = new DPWrenGABGS;
+	//bgs = new DPWrenGABGS;
 	//bgs = new DPPratiMediodBGS;
 	//bgs = new DPEigenbackgroundBGS;
 	//bgs = new DPTextureBGS;
