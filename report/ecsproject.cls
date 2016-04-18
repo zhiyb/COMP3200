@@ -219,7 +219,7 @@
       \vfill
       \vspace{70pt}
       {\normalsize Project supervisor: \supname \par}
-      %{\normalsize Second examiner: \examname \par}
+      {\normalsize Second examiner: \examname \par}
       %\vfill
       \vspace{20pt}
       {\large A progress report submitted for the award of \par}

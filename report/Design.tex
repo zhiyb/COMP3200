@@ -1,0 +1,65 @@
+\chapter{Design} \label{Chapter:Design}
+
+\section{Specification}
+
+{\color{red}Specification of works, quantifiable}
+
+Achieve $50\%$ or more power saving on some real world dataset through adaptive operation, while maintaining $80\%$ or more successful object detect rate.
+
+\section{Hardware}
+
+{\color{red}Design works, choices of hardware, software, etc.}
+
+\subsection{Hardware platform}
+
+%ARM or x86?
+
+An embedded development board was used in this project, it enables easy power consumption analysis and is more like the situation where power saving will be required rather than a desktop or server environment.
+
+The most broadly used embedded platform processor architecture is ARM. It has relative high performance, extensively hardware and software support including embedded Linux system with reasonable power consumption and varies power saving modes, therefore was chosen to be used in this project. The open-source GNU/Linux system also enables better control of active processes and the board hardware, while providing familiar, widely used tool sets and computer vision algorithms.
+
+Specifically, the Jetson Tegra K1 embedded development platform \cite{NVIDIA:tk1} featuring a 2.32GHz quad-core ARM CPU and a CUDA enabled Tegra GPU, introduced by NVIDIA, was used in this project. It has a rich set of peripherals interfaces exposed enables low-level control and interfacing with a MIPI-CSI camera module and it is powerful enough to compile programs and execute complex computer vision algorithms. The heterogeneous architecture with CUDA enabled GPU can also be fully utilised by the GPU module in specifically optimised computer vision programming libraries, makes it particularly suitable for computer vision tasks.
+
+% {\color{red}More}
+
+A general x86 computer running Microsoft Windows operation system with a webcam was also used for algorithm development and remote control of the embedded development board. Since most algorithm developments did not use platform specific features, they can be easily ported to the embedded platform.
+
+\subsection{Camera}
+
+% Specific camera module to be used was not determined yet at the time this progress report was written, but it would be a high resolution camera module from OmniVision \cite{ovt} that can be easily interfaced and directly controlled with the peripheral interfaces on the Jetson TK1 platform. A Linux kernel module driver probably need to be developed in order to control the camera parameters and operations from program running in user space.
+
+The raspberry pi camera module was used in this project, it features an OV5647 camera sensor manufactured by OmniVision Technologies Inc. It is relatively more expensive than buying the camera sensor only, but the raspberry pi camera module is more broadly available in small quantities and can be interfaced without the need to design a dedicated adapter PCB. It uses the MIPI-CSI interface which the board has native support for, the complete data sheet is also available around the Internet and it features subsampling, frame rate control, auto exposure and white balance functions etc. which are essential to adaptive operation.
+
+The only difficulty is that it can only output frames in raw Bayer pattern format, but since the format can be converted efficiently using the GPU cores and CUDA, that is not a significant issue.
+
+\section{Software}
+
+\subsection{Operating system}
+
+Ubuntu Linux distribution version 14.04.1 LTS was used on the platform, installed directly from the file system image provided by NVIDIA. Linux is great for this project because it is fully configurable, so that operating system overheads can be reduced to minimum by disabling unused services and even the graphical desktop environment. Also most Linux operations could be done through just command line interface, perhaps via a SSH shell access, therefore programming and control the platform could be done anywhere with internet connection, which is very convenient.
+
+\subsection{Computer vision API}
+
+OpenCV \cite{opencv} was used to implement the algorithms, due to its cross platform adaptability, easy to use and has large number of existing algorithms ready for use and investigation. Furthermore, the OpenCV library for Jetson platform developed by NVIDIA was further optimised, can provide 2x-5x speed up compare to regular OpenCV \cite{NVIDIA:perf}. The OpenCV GPU module based on NVIDIA CUDA was also available, can provide 5x-20x speed up. These optimisations can reduce computation time dramatically, thus lower the power consumption further.
+
+\subsection{Testing dataset}
+
+A video database from \cite{goyette2012changedetection} was used for testing the algorithms and analysis the performance and accuracy of adaptive operation. Using a consistent video stream input and a camera power consumption model instead of replaying the same scene in front of the camera is preferred, because reproducing the exactly same video stream from replaying scene is impossible, factors such as camera or object instability, inaccurate synchronisation, hardware and software restrains will always take effect.
+
+The database was rigorous and comprehensive, involves lots of carefully chosen video streams from different real life scenarios, very useful for evaluate the algorithms in different situation.
+
+\section{Algorithms}
+
+\subsection{Object detection algorithm}
+
+The model based object detection algorithms described in previous chapter might be useful for some specific projects, but for a more general object tracking system with previously specified application areas, motion based algorithms which can track any kind of moving objects, was used in this project for evaluating adaptive operation.
+
+There are 2 different motion based algorithms described previously, background subtraction and optical flow. Since optical flow can only detect moving objects, objects moving in a relatively low speed or stops for a few moments involved in a lot of scenarios would not be detectable by optical flow, therefore background subtraction which can handle this kind of situations was used for the object detection phase.
+
+However, there are several distinctive background subtraction algorithms available for use. After some evaluations, the ViBE algorithm was chosen, because it is relatively efficient, has moderate memory usage and has GPU implementation thus can take the advantage of heterogeneous platform architecture.
+
+\subsection{Object tracking algorithm}
+
+Connected component labelling is used after foreground masks being extracted from each frame.
+
+{\color{red}HOW???}

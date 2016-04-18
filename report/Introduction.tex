@@ -1,0 +1,63 @@
+\chapter{Introduction} \label{Chapter:Introduction}
+
+\iffalse
+1-1.5 pages
+\fi
+
+\section{The problem}
+
+\iffalse
+% Current energy wasting part.
+Use heterogeneous hardware.
+% Needs for energy efficient object detection:
+% Embedded devices, robots, etc.
+% Less computation, can achieve less storage \& bandwidth.
+\fi
+
+Computer vision algorithms are heavily used in lots of different areas, such as robotic and video surveillance systems. Currently most of them requires the use of a dedicated processing server, either a remote computer or a cloud server on the internet, wasting a lot of energy and data bandwidth in the process of video stream transmission, storage and processing, also suffers high response latency. With the rapid growth of integrated circuit technologies, processing power was just enough to realise computation intensive computer vision algorithms on a small form factor mobile platform, which can be very useful for those systems, since it can dramatically reduce the energy wasting by applying computer vision algorithms directly on board, enables low latency reactions and adaptive energy saving operation, also provides considerable flexibility.
+
+Moreover, with the availability of integrated GPU cores in modern embedded and system-on-chip (SoC) platforms, on board video processing can be a lot more faster and powerful by utilising the heterogeneous hardware architecture, as most of video processing algorithms can take the advantages of parallel computing.
+
+%However, mobile devices generally have limited processing power, memory, storage and energy, but video processing algorithms involves lots of computations, hence could be the most power intensive and time consuming part in such application.
+
+\section{Example applications} %\label{Chapter:Applications}
+
+\iffalse
+Example applications, can be multiple.
+e.g. Video conference.
+\fi
+
+This technique can be applied to vision based robotic and interactive embedded applications, where power consumption and response latency are essential. By enabling adaptive frame rate and resolution control, the processing power, hence the total power consumption, can be dramatically reduced by not having to continuously process video stream at high frame rate and resolution when it is not necessary. In addition, by executing computer vision algorithms on board instead of remote compute server, low latency responsiveness on such system can be achieved.
+
+This technique may also be applied to bandwidth efficient video streaming applications, for example video surveillance and conferencing. In such applications, the bandwidth and storage requirements can be significantly reduced when no noticeable object in the scene was moving, since high frame rate video streaming and storing are not necessary and can even be paused.
+
+\section{Aims}
+
+\iffalse
+Metric: power consumption vs accuracy?
+What have done?
+\fi
+
+\iffalse
+The aim of this project was to investigate ways to reduce overall power consumption of camera based real-time object detection and tracking applications, by applying feedback control of the camera module based on previous tracking results and utilising existing camera hardware capabilities including down sampling and cropping instead of software algorithms, while keeping a sensible accuracy. By doing so the average computation time would be dramatically reduced, hence reducing the overall power consumption.
+\fi
+
+The targets to be achieved are:
+
+\begin{itemize}
+	\item Choose an embedded development platform that is capable for running computer vision algorithms in real time and has direct access to camera control interface.
+	\item Interface a suitable camera module with sensible specifications for use with the platform.
+	\item Identity and realise real time object detection and tracking algorithms that are suitable for use in such platform.
+	\item Realise adaptive camera frame rate and resolution control, based on the speeds and sizes of objects tracked, hence reducing computations, consequently reducing total power consumption.
+	\item Analyse and optimise the performance of the operation metric, by applying the algorithms with and without adaptive operation on same sets of sample video streams, comparing the percentage of objects been tracked and overall power consumption reduction achieved.
+\end{itemize}
+
+\iffalse
+\begin{itemize}
+  \item Development of a basic object tracking system, identify algorithms suitable for real-time operation, minimise operating system overheads.
+  \item Interfacing camera module with the embedded system, expose control functions.
+  \item Develop and analyse automatic camera frame rate reduction.
+  \item Develop and analyse hardware down sampling and cropping.
+  \item If time allows, object recognition may be implemented.
+\end{itemize}
+\fi
