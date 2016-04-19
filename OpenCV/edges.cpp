@@ -22,6 +22,7 @@ int main(int argc, char *argv[])
 		width = 1280;
 		height = 960;
 	}
+	//gpu::setDevice(0);
 	if (captureInit(argv[1], width, height))
 		return -1;
 #endif
@@ -29,7 +30,8 @@ int main(int argc, char *argv[])
 	Mat frame, edges;
 	namedWindow("edges",1);
 	for (;;) {
-		Mat frame = captureQuery();
+		Mat frame;
+		captureQueryGPU().download(frame);
 		//cap >> frame;
 		cvtColor(frame, edges, CV_BGR2GRAY);
 		GaussianBlur(edges, edges, Size(7,7), 1.5, 1.5);

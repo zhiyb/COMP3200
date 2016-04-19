@@ -11,8 +11,8 @@ TRG	= OpenCV
 DEV	= /dev/video0
 #RES	= 2592 1944
 #RES	= 1920 1080
-#RES	= 1280 960
-RES	= 640 480
+RES	= 1280 960
+#RES	= 640 480
 #RES	= 320 240
 
 OBJ	= $(subst .S,.o,$(subst .c,.o,$(subst .cpp,.o,$(SRC:.cu=.o))))

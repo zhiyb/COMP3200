@@ -3,14 +3,18 @@
 #include <mutex>
 #include <condition_variable>
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <signal.h>
+
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 #include "yavta.h"
 #include "ov5647_v4l2.h"
+#include "capture.h"
 
 using namespace std;
 using namespace cv;
+using namespace cv::gpu;
 
 #define MAX_W		OV5647_MAX_W
 #define MAX_H		OV5647_MAX_H
@@ -159,8 +163,8 @@ Mat captureQuery()
 	sync.wait();
 	sync.lock();
 	sync.bufidx = bufidx;
-	Mat raw(status.height, status.width, CV_16UC1, dev.buffers[sync.bufidx].mem);
 	sync.unlock();
+	Mat raw(status.height, status.width, CV_16UC1, dev.buffers[sync.bufidx].mem);
 	Mat rawu8, frame;
 	raw.convertTo(rawu8, CV_8UC1, 1.f / 4.f);
 	sync.lock();
@@ -168,6 +172,31 @@ Mat captureQuery()
 	sync.unlock();
 	cvtColor(rawu8, frame, CV_BayerBG2RGB);
 	return frame;
+}
+
+static GpuMat raw, rawu8, frame;
+GpuMat captureQueryGPU()
+{
+	sync.wait();
+	sync.lock();
+	sync.bufidx = bufidx;
+	sync.unlock();
+	raw.upload(Mat(status.height, status.width, CV_16UC1, dev.buffers[sync.bufidx].mem));
+	sync.lock();
+	sync.bufidx = -1;
+	sync.unlock();
+	raw.convertTo(rawu8, CV_8UC1, 1.f / 4.f);
+	sync.lock();
+	sync.bufidx = -1;
+	sync.unlock();
+	gpu::cvtColor(rawu8, frame, CV_BayerBG2RGB);
+	return frame;
+}
+
+static void sigintHandler(int signo)
+{
+	clog << "Signal INT received, closing camera..." << endl;
+	captureClose();
 }
 
 int captureInit(const char *devfile, int width, int height)
@@ -184,12 +213,21 @@ int captureInit(const char *devfile, int width, int height)
 
 	// Initialise V4L2
 	int err = 0;
-	if ((err = video_init(&dev, devfile, status.pixelformat, MAX_W, MAX_H, BUFFER_NUM)) != 0)
+	if ((err = video_init(&dev, devfile, status.pixelformat, status.width, status.height, BUFFER_NUM)) != 0)
 		return err;
+#if 0
 	if ((err = video_set_format(&dev, status.width, status.height, status.pixelformat)) < 0) {
 		video_close(&dev);
 		return err;
 	}
+#endif
+
+	// Setup interrupt signal handler
+	struct sigaction newact;
+	newact.sa_handler = sigintHandler;
+	sigemptyset(&newact.sa_mask);
+	newact.sa_flags = 0;
+	sigaction(SIGINT, &newact, NULL);
 
 	// Setup handling thread
 	tCapture = thread(captureThread);
