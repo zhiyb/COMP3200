@@ -231,11 +231,13 @@ int captureInit(const char *devfile, int width, int height)
 #endif
 
 	// Setup interrupt signal handler
+#if 1
 	struct sigaction newact;
 	newact.sa_handler = sigintHandler;
 	sigemptyset(&newact.sa_mask);
 	newact.sa_flags = 0;
 	sigaction(SIGINT, &newact, NULL);
+#endif
 
 	// Setup handling thread
 	tCapture = thread(captureThread);
