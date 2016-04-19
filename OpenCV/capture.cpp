@@ -162,6 +162,10 @@ Mat captureQuery()
 {
 	sync.wait();
 	sync.lock();
+	if (status.request == REQUEST_QUIT) {
+		sync.unlock();
+		return Mat();
+	}
 	sync.bufidx = bufidx;
 	sync.unlock();
 	Mat raw(status.height, status.width, CV_16UC1, dev.buffers[sync.bufidx].mem);
@@ -179,6 +183,10 @@ GpuMat captureQueryGPU()
 {
 	sync.wait();
 	sync.lock();
+	if (status.request == REQUEST_QUIT) {
+		sync.unlock();
+		return GpuMat();
+	}
 	sync.bufidx = bufidx;
 	sync.unlock();
 	raw.upload(Mat(status.height, status.width, CV_16UC1, dev.buffers[sync.bufidx].mem));
@@ -236,6 +244,8 @@ int captureInit(const char *devfile, int width, int height)
 
 void captureClose()
 {
+	if (status.request == REQUEST_QUIT)
+		return;
 	status.request = REQUEST_QUIT;
 	tCapture.join();
 }

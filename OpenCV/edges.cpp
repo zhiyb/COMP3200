@@ -2,8 +2,9 @@
 #include "opencv/highgui.h"
 #include "capture.h"
 
-using namespace cv;
 using namespace std;
+using namespace cv;
+using namespace cv::gpu;
 
 int main(int argc, char *argv[])
 {
@@ -28,10 +29,13 @@ int main(int argc, char *argv[])
 #endif
 
 	Mat frame, edges;
+	GpuMat frameGPU;
 	namedWindow("edges",1);
 	for (;;) {
-		Mat frame;
-		captureQueryGPU().download(frame);
+		frameGPU = captureQueryGPU();
+		if (frameGPU.empty())
+			break;
+		frameGPU.download(frame);
 		//cap >> frame;
 		cvtColor(frame, edges, CV_BGR2GRAY);
 		GaussianBlur(edges, edges, Size(7,7), 1.5, 1.5);
