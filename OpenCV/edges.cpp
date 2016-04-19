@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
 	Mat frame, edges;
 	namedWindow("edges",1);
 	for (;;) {
-		frame = captureQuery();
+		Mat frame = captureQuery();
 		//cap >> frame;
 		cvtColor(frame, edges, CV_BGR2GRAY);
 		GaussianBlur(edges, edges, Size(7,7), 1.5, 1.5);

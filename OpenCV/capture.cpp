@@ -3,6 +3,7 @@
 #include <mutex>
 #include <condition_variable>
 
+#include <opencv/cv.h>
 #include <opencv/highgui.h>
 
 #include "yavta.h"
@@ -160,7 +161,13 @@ Mat captureQuery()
 	sync.bufidx = bufidx;
 	Mat raw(status.height, status.width, CV_16UC1, dev.buffers[sync.bufidx].mem);
 	sync.unlock();
-	return raw;
+	Mat rawu8, frame;
+	raw.convertTo(rawu8, CV_8UC1, 1.f / 4.f);
+	sync.lock();
+	sync.bufidx = -1;
+	sync.unlock();
+	cvtColor(rawu8, frame, CV_BayerBG2RGB);
+	return frame;
 }
 
 int captureInit(const char *devfile, int width, int height)
