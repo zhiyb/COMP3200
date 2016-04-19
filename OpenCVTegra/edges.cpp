@@ -1,5 +1,5 @@
-#include "opencv/cv.h"
-#include "opencv/highgui.h"
+#include <opencv2/opencv.hpp>
+#include <opencv2/highgui/highgui.hpp>
 #include "capture.h"
 
 using namespace std;
@@ -55,5 +55,6 @@ int main(int argc, char *argv[])
 		if(waitKey(1) >= 0) break;
 	}
 	captureClose();
+	destroyAllWindows();
 	return 0;
 }

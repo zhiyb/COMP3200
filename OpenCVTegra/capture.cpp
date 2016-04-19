@@ -158,11 +158,12 @@ void captureThread()
 	}
 
 captureFailed:
-	printf("%s: quitting: 0\n", __func__);
 	return;
+	printf("%s: quitting: 0\n", __func__);
 	//sync.notify();
 	video_enable(&dev, 0);
 failed:
+	return;
 	printf("%s: quitting: 1\n", __func__);
 	video_close(&dev);
 	printf("%s: quitting: 2\n", __func__);
@@ -264,12 +265,12 @@ void captureClose()
 	//if (status.request == REQUEST_QUIT)
 	//	return;
 	status.request = REQUEST_QUIT;
-	printf("%s: Request for quit...\n", __func__);
+	//printf("%s: Request for quit...\n", __func__);
 	tCapture->join();
 	delete tCapture;
 	video_enable(&dev, 0);
 	video_close(&dev);
-	printf("%s: Request for quit: tInput\n", __func__);
+	//printf("%s: Request for quit: tInput\n", __func__);
 	tInput->detach();
 	//tInput->join();
 	delete tInput;
