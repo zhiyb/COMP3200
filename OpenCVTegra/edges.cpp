@@ -29,8 +29,10 @@ int main(int argc, char *argv[])
 	uint64_t count = 0;
 	for (;;) {
 		frame = captureQueryGPU();
-		if (frame.empty())
+		if (frame.empty()) {
+			printf("%s: Empty frame received, quitting...\n", __func__);
 			break;
+		}
 
 		gpu::cvtColor(frame, edges, CV_BGR2GRAY);
 		gpu::GaussianBlur(edges, edges, Size(7,7), 1.5, 1.5);

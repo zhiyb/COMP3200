@@ -38,7 +38,7 @@ static struct status_t {
 } status;
 static enum {Queued = 0, Captured, Used, Free} bufstatus[BUFFER_NUM] = {Queued};
 
-static thread tInput, tCapture;
+static thread *tInput, *tCapture;
 
 static struct sync_t {
 	volatile int bufidx;
@@ -71,8 +71,9 @@ static inline int setLED(uint32_t enable)
 void inputThread()
 {
 	getchar();
-	//status.request = REQUEST_QUIT;
-	captureClose();
+	printf("%s: Request for quit...\n", __func__);
+	status.request = REQUEST_QUIT;
+	//captureClose();
 }
 
 void captureThread()
@@ -157,11 +158,15 @@ void captureThread()
 	}
 
 captureFailed:
+	printf("%s: quitting: 0\n", __func__);
+	return;
+	//sync.notify();
 	video_enable(&dev, 0);
 failed:
+	printf("%s: quitting: 1\n", __func__);
 	video_close(&dev);
+	printf("%s: quitting: 2\n", __func__);
 	status.request = REQUEST_QUIT;
-	printf("%s: quitting\n", __func__);
 }
 
 Mat captureQuery()
@@ -204,9 +209,6 @@ GpuMat captureQueryGPU()
 	if (status.request == REQUEST_QUIT)
 		return GpuMat();
 	raw.convertTo(rawu8, CV_8UC1, 1.f / 4.f);
-	sync.lock();
-	sync.bufidx = -1;
-	sync.unlock();
 	gpu::cvtColor(rawu8, frame, CV_BayerBG2RGB);
 	return frame;
 }
@@ -252,18 +254,25 @@ int captureInit(const char *devfile, int width, int height)
 #endif
 
 	// Setup handling thread
-	tInput = thread(inputThread);
-	tCapture = thread(captureThread);
+	tInput = new thread(inputThread);
+	tCapture = new thread(captureThread);
 	return err;
 }
 
 void captureClose()
 {
-	if (status.request == REQUEST_QUIT)
-		return;
+	//if (status.request == REQUEST_QUIT)
+	//	return;
 	status.request = REQUEST_QUIT;
-	tCapture.join();
-	tInput.detach();
+	printf("%s: Request for quit...\n", __func__);
+	tCapture->join();
+	delete tCapture;
+	video_enable(&dev, 0);
+	video_close(&dev);
+	printf("%s: Request for quit: tInput\n", __func__);
+	tInput->detach();
+	//tInput->join();
+	delete tInput;
 }
 
 float captureFPS()
