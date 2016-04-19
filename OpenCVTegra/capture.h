@@ -8,5 +8,6 @@ int captureInit(const char *devfile, int width, int height);
 cv::Mat captureQuery();
 cv::gpu::GpuMat captureQueryGPU();
 void captureClose();
+float captureFPS();
 
 #endif

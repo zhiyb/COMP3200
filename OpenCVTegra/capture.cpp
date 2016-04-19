@@ -38,7 +38,7 @@ static struct status_t {
 } status;
 static enum {Queued = 0, Captured, Used, Free} bufstatus[BUFFER_NUM] = {Queued};
 
-static thread tCapture;
+static thread tInput, tCapture;
 
 static struct sync_t {
 	volatile int bufidx;
@@ -66,6 +66,13 @@ static struct sync_t {
 static inline int setLED(uint32_t enable)
 {
 	return video_set_control(&dev, OV5647_CID_LED, &enable);
+}
+
+void inputThread()
+{
+	getchar();
+	//status.request = REQUEST_QUIT;
+	captureClose();
 }
 
 void captureThread()
@@ -127,8 +134,7 @@ void captureThread()
 
 		int64_t now = getTickCount();
 		if (now - past > 3 * getTickFrequency()) {
-			float fps = (float)count / (now - past) * getTickFrequency();
-			status.vFPS = fps;
+			status.vFPS = (float)count / (now - past) * getTickFrequency();
 			count = 0;
 			past = now;
 		}
@@ -174,6 +180,8 @@ Mat captureQuery()
 	sync.lock();
 	sync.bufidx = -1;
 	sync.unlock();
+	if (status.request == REQUEST_QUIT)
+		return Mat();
 	cvtColor(rawu8, frame, CV_BayerBG2RGB);
 	return frame;
 }
@@ -193,6 +201,8 @@ GpuMat captureQueryGPU()
 	sync.lock();
 	sync.bufidx = -1;
 	sync.unlock();
+	if (status.request == REQUEST_QUIT)
+		return GpuMat();
 	raw.convertTo(rawu8, CV_8UC1, 1.f / 4.f);
 	sync.lock();
 	sync.bufidx = -1;
@@ -201,11 +211,13 @@ GpuMat captureQueryGPU()
 	return frame;
 }
 
+#if 0
 static void sigintHandler(int signo)
 {
 	clog << "Signal INT received, closing camera..." << endl;
 	captureClose();
 }
+#endif
 
 int captureInit(const char *devfile, int width, int height)
 {
@@ -231,7 +243,7 @@ int captureInit(const char *devfile, int width, int height)
 #endif
 
 	// Setup interrupt signal handler
-#if 1
+#if 0
 	struct sigaction newact;
 	newact.sa_handler = sigintHandler;
 	sigemptyset(&newact.sa_mask);
@@ -240,6 +252,7 @@ int captureInit(const char *devfile, int width, int height)
 #endif
 
 	// Setup handling thread
+	tInput = thread(inputThread);
 	tCapture = thread(captureThread);
 	return err;
 }
@@ -250,4 +263,10 @@ void captureClose()
 		return;
 	status.request = REQUEST_QUIT;
 	tCapture.join();
+	tInput.detach();
+}
+
+float captureFPS()
+{
+	return status.vFPS;
 }

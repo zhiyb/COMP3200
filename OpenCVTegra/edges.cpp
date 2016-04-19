@@ -23,20 +23,34 @@ int main(int argc, char *argv[])
 	if (captureInit(argv[1], width, height))
 		return -1;
 
-	Mat frame, edges;
-	GpuMat frameGPU;
+	GpuMat frame, edges;
 	namedWindow("edges",1);
+	int64_t past = getTickCount();
+	uint64_t count = 0;
 	for (;;) {
-		frameGPU = captureQueryGPU();
-		if (frameGPU.empty())
+		frame = captureQueryGPU();
+		if (frame.empty())
 			break;
-		frameGPU.download(frame);
-		//cap >> frame;
-		cvtColor(frame, edges, CV_BGR2GRAY);
-		GaussianBlur(edges, edges, Size(7,7), 1.5, 1.5);
-		Canny(edges, edges, 0, 30, 3);
-		imshow("edges", edges);
-		if(waitKey(30) >= 0) break;
+
+		gpu::cvtColor(frame, edges, CV_BGR2GRAY);
+		gpu::GaussianBlur(edges, edges, Size(7,7), 1.5, 1.5);
+		gpu::Canny(edges, edges, 0, 30, 3);
+
+		Mat edgesCPU;
+		edges.download(edgesCPU);
+		imshow("edges", edgesCPU);
+
+		int64_t now = getTickCount();
+		if (now - past > 3 * getTickFrequency()) {
+			float fps = (float)count / (now - past) * getTickFrequency();
+			count = 0;
+			past = now;
+			printf("\nCapture FPS: %g\n", captureFPS());
+			printf("Window FPS: %g\n", fps);
+		}
+		count++;
+
+		if(waitKey(1) >= 0) break;
 	}
 	captureClose();
 	return 0;
