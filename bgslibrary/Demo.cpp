@@ -71,9 +71,60 @@ along with BGSLibrary.  If not, see <http://www.gnu.org/licenses/>.
 
 #define DATASET	"D:\\dataset\\dataset\\baseline\\highway"
 
+using namespace std;
+using namespace cv;
+
 static RNG rng(12345);
 
-using namespace std;
+// Optical flow tracking
+vector<Scalar> colour;
+vector<Point2f> prevPts, nextPts;
+Mat ofPrev;
+
+void ofUpdate(Mat next, Mat mask)
+{
+	if (ofPrev.empty())
+		goto init;
+
+#if 1
+	goodFeaturesToTrack(ofPrev, prevPts, 25, 0.3, 10, mask);
+#else
+	vector<Point2f> pts, bkpPts = prevPts;
+	goodFeaturesToTrack(ofPrev, pts, 25, 0.3, 10, mask);
+
+	prevPts.clear();
+	for (Point2f &p: pts) {
+		for (Point2f &bp: bkpPts) {
+			if ()
+		}
+	}
+#endif
+
+	colour.resize(prevPts.size());
+	for (unsigned int i = 0; i < prevPts.size(); i++)
+		colour[i] = Scalar(rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255));
+
+	if (prevPts.size() > 0) {
+		vector<Point2f> pts, bkpPts = prevPts;
+		vector<uchar> ofStatus;
+		vector<float> err;
+		//TermCriteria termcrit(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 20, 0.03);
+		Size winSize(20, 20);
+		calcOpticalFlowPyrLK(ofPrev, next, bkpPts, pts,
+				     ofStatus, err, winSize);
+
+		prevPts.clear();
+		nextPts.clear();
+		for (unsigned int i = 0; i < pts.size(); i++)
+			if (ofStatus[i]) {
+				prevPts.push_back(bkpPts[i]);
+				nextPts.push_back(pts[i]);
+			}
+	}
+
+init:
+	ofPrev = next;
+}
 
 int main(int argc, char **argv)
 {
@@ -89,6 +140,7 @@ int main(int argc, char **argv)
 	getline(ifs, str);
 	istringstream iss(str);
 	iss >> start >> total;
+	ifs.close();
 
 	clog << "Starts at frame " << start << ", " << total << " frames in total." << endl;
 #else
@@ -145,7 +197,7 @@ int main(int argc, char **argv)
 	//bgs = new MixtureOfGaussianV2BGS;
 	//bgs = new AdaptiveBackgroundLearning;
 	//bgs = new AdaptiveSelectiveBackgroundLearning;
-	bgs = new GMG;
+	//bgs = new GMG;
 
 	/*** DP Package (thanks to Donovan Parks) ***/
 	//bgs = new DPAdaptiveMedianBGS;
@@ -166,7 +218,7 @@ int main(int argc, char **argv)
 	//bgs = new FuzzyChoquetIntegral;
 
 	/*** JMO Package (thanks to Jean-Marc Odobez) ***/
-	//bgs = new MultiLayerBGS;
+	bgs = new MultiLayerBGS;
 
 	/*** PT Package (thanks to Martin Hofmann, Philipp Tiefenbacher and Gerhard Rigoll) ***/
 	//bgs = new PixelBasedAdaptiveSegmenter;
@@ -200,19 +252,21 @@ int main(int argc, char **argv)
 	//bgs = new SuBSENSEBGS();
 	//bgs = new LOBSTERBGS();
 
-	Mat previous;//, previous_mask;
+	//Mat previous;//, previous_mask;
 	Mat trace;
 	cv::Mat img_mask;
 	cv::Mat img_bkgmodel;
 	//std::vector<std::vector<cv::Point> > previous_contours;
 	int frame_count = 0;
-	for (int ds = 1; ds != total;) {
-		//frame_aux = cvQueryFrame(capture);
-		//if(!frame_aux) break;
-
+	for (int ds = 1; ds <= total; ds++) {
 #ifdef DATASET
+		// Frame rate control
+		if (ds % 3)
+			 continue;
+
+		// Read frame image
 		ostringstream imgfile;
-		imgfile << DATASET "/input/in" << setw(6) << setfill('0') << ds++ << ".jpg";
+		imgfile << DATASET "/input/in" << setw(6) << setfill('0') << ds << ".jpg";
 		//clog << "Reading file " << imgfile.str() << endl;
 		frame = imread(imgfile.str().c_str());
 		if (!frame.rows || !frame.cols) {
@@ -220,6 +274,9 @@ int main(int argc, char **argv)
 			return 1;
 		}
 #else
+		//frame_aux = cvQueryFrame(capture);
+		//if(!frame_aux) break;
+
 		//cvResize(frame_aux, frame);
 		cap >> frame;
 #endif
@@ -230,8 +287,8 @@ int main(int argc, char **argv)
 		//	cv::imwrite("dataset/1.png", img_input);
 
 		if (frame_count == 0) {
-			previous = img_input;
-			trace = Mat(img_input.size(), CV_8UC3);
+			//previous = img_input;
+			trace = Mat(img_input.size(), CV_8UC3, Scalar(0));
 		}
 
 		bgs->process(img_input, img_mask, img_bkgmodel); // by default, it shows automatically the foreground mask image
@@ -241,8 +298,8 @@ int main(int argc, char **argv)
 		//  do something
 		medianBlur(img_mask, img_mask, 5);
 
-#if 0
-#define BLOB_SIZE	50
+#if 1
+#define BLOB_SIZE	10
 		// find blobs
 		std::vector<std::vector<cv::Point> > v;
 		std::vector<cv::Vec4i> hierarchy;
@@ -273,7 +330,7 @@ int main(int argc, char **argv)
 		for (size_t i=0; i < v.size(); ++i)
 		{
 			// drop smaller blobs
-			if (cv::contourArea(v[i]) < 100)
+			if (cv::contourArea(v[i]) < BLOB_SIZE * BLOB_SIZE)
 				continue;
 			// draw filled blob
 			cv::drawContours(img_mask, v, i, cv::Scalar(255,0,0), CV_FILLED, 8, hierarchy, 0, cv::Point());
@@ -378,7 +435,46 @@ int main(int argc, char **argv)
 
 		//imshow("Mask", img_mask);
 #endif
+#if 1
+		Mat next_grey;
+		cvtColor(img_input, next_grey, CV_RGB2GRAY);
+		ofUpdate(next_grey, img_mask);
 
+		if (prevPts.size() > 0) {
+			for (size_t i = 0; i < prevPts.size(); i++) {
+				//line(drawing, center[i], next_points[i], colour, 5);
+				line(trace, prevPts[i], nextPts[i], colour[i], 1, 8);
+				//circle(drawing, next_points[i], 3, colour, -1, 8);
+			}
+			imshow("Trace", trace);
+		}
+#else
+		vector<Point2f> corners;
+		goodFeaturesToTrack(prev_grey, corners, 25, 0.3, 10, img_mask);
+#if 0
+		for (Point p: corners) {
+			Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255));
+			circle(trace, p, 2, color, -1);
+		}
+#endif
+
+		if (corners.size() > 0) {
+			//TermCriteria termcrit(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 20, 0.03);
+			Size winSize(20, 20);
+			calcOpticalFlowPyrLK(prev_grey, next_grey, corners, nextPts,
+					     status, err, winSize);
+
+			for (size_t i = 0; i < nextPts.size(); i++) {
+				if (!status[i])
+					continue;
+				Scalar colour = Scalar(rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255));
+				//line(drawing, center[i], next_points[i], colour, 5);
+				line(trace, corners[i], nextPts[i], colour, 1, 8);
+				//circle(drawing, next_points[i], 3, colour, -1, 8);
+			}
+			imshow("Trace", trace);
+		}
+#endif
 #if 0
 		for (size_t i = 0; i < previous_contours.size(); i++) {
 			//Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255));
@@ -392,6 +488,7 @@ int main(int argc, char **argv)
 		//img_input.copyTo(previous);
 		//img_mask.copyTo(previous_mask);
 		//previous_contours = contours;
+		//previous = img_input;
 		frame_count++;
 		int key = cvWaitKey(1);
 		/*if (frame_count == 126) {
