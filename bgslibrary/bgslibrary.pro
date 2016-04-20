@@ -15,8 +15,8 @@ QMAKE_LIBS	+= -lopencv_video2410.dll
 QMAKE_LIBS	+= -lopencv_imgproc2410.dll
 QMAKE_LIBS	+= -lopencv_highgui2410.dll
 QMAKE_LIBS	+= -lopencv_objdetect2410.dll
-QMAKE_LIBDIR	+= D:\Programs\misc\opencv\build\x86\mingw\bin
-QMAKE_LIBDIR	+= D:\Programs\misc\opencv\build\x86\mingw\lib
+QMAKE_LIBDIR	+= D:\Programs\misc\opencv\build\bin
+QMAKE_LIBDIR	+= D:\Programs\misc\opencv\build\lib
 
 SOURCES += \
     FrameProcessor.cpp \
@@ -106,7 +106,7 @@ SOURCES += \
     package_bgs/tb/T2FMRF.cpp \
     package_bgs/tb/T2FMRF_UM.cpp \
     package_bgs/tb/T2FMRF_UV.cpp \
-    Demo2.cpp
+    Demo.cpp
 
 HEADERS += \
     package_bgs/AdaptiveBackgroundLearning.h \

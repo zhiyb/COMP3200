@@ -1,12 +1,14 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 
+using namespace std;
 using namespace cv;
 
-int main(int, char**)
+int main(int argc, char *argv[])
 {
 	VideoCapture cap(0);
-	if(!cap.isOpened()) return -1;
+	if (!cap.isOpened())
+		return -1;
 
 	Mat frame, edges;
 	namedWindow("edges",1);

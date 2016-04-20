@@ -69,7 +69,7 @@ along with BGSLibrary.  If not, see <http://www.gnu.org/licenses/>.
 #include "package_bgs/pl/SuBSENSE.h"
 #include "package_bgs/pl/LOBSTER.h"
 
-#define DATASET	"D:\\dataset\\dataset\\baseline\\highway"
+#define DATASET	"dataset/baseline/highway"
 
 using namespace std;
 using namespace cv;
@@ -261,8 +261,10 @@ int main(int argc, char **argv)
 	for (int ds = 1; ds <= total; ds++) {
 #ifdef DATASET
 		// Frame rate control
+#if 0
 		if (ds % 3)
 			 continue;
+#endif
 
 		// Read frame image
 		ostringstream imgfile;
