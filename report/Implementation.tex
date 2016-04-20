@@ -93,7 +93,7 @@ OpenCV's implementation of Hough Circle Transform for circle detection was inves
   \label{Figure:circles}
 \end{figure}
 
-The frame captured from camera (\fref{Figure:edges:original}), was first converted to a grey scaled and blurred image, as shown in \fref{Figure:edges:blur}. Blur or smoothing is often necessarily to reduce false object edges that might be detected. Afterwards the object edges in the image was extracted as in \fref{Figure:edges:edges}. Finally \fref{Figure:edges:circles} shows the circles detected by the algorithm.
+The frame captured from camera (\fref{Figure:edges:original}), was first converted to grey scale then blurred, as shown in \fref{Figure:edges:blur}. Blur or smoothing is often necessarily to reduce false object edges that might be detected. Afterwards the object edges in the image was extracted as in \fref{Figure:edges:edges}. Finally \fref{Figure:edges:circles} shows the circles detected by the algorithm.
 
 However, this algorithm is still very limited and inaccurate, as shown by \fref{Figure:circles}, the coin at the top right corner had not been detected, because it appeared to be an eclipse instead of a prefect circle to the algorithm because of camera perspective. Furthermore, in order to detect multiple geometric shapes, different algorithms would be required for each of the different shapes.
 
@@ -105,17 +105,20 @@ The OpenCV's cascade classifier implementation \cite{opencv:cc} of face and eye 
 
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.6\columnwidth]{"CC face"}
+  \includegraphics[width=0.6\columnwidth]{cc_imp_face}
   \caption{Face and eye detection cascade classifiers, detected face was circled by pink, whereas detected eyes were circled by blue}
   \label{Figure:cc_face}
 \end{figure}
 
-Noticeable {\color{red}DATA?} frame rate drop and latency was experienced (about only {\color{red}xx} fps) when experiments with the cascade classifier implementation on the testing platform, suggests it might not be a suitable algorithm for real-time object tracking application. In addition, multiple classifier definition files were required for detecting different kinds of objects, or even different perspectives of the same object, which would require lots of computations.
+Noticeable {\color{red}DATA?} frame rate drop and latency was experienced (about only {\color{red}xx} fps) when experiments with the cascade classifier implementation on the testing platform, suggests it might not be a suitable algorithm for real-time object tracking application on embedded platforms.
 
 \subsection{Motion based}
 
-The article \cite{bgs:article} reviewed the algorithms available in the BGSLibrary, ranked 5 algorithms as the best methods for accuracy. Except the Pixel-Based Adaptive Segmenter (PBAS) algorithm which was removed due to patent issues, the other 4 algorithms listed in \tref{Table:bgs} were investigated in this project.
+This article \cite{bgs:article} reviewed the algorithms available in the BGSLibrary, ranked 5 algorithms as the best methods for accuracy, 4 of 5 algorithms listed in \tref{Table:bgs} were investigated in this project.
 
+{\color{red}GPU implementation?}
+
+\iffalse
 \begin{table}[H]
   \centering
   \begin{tabular}{cc}
@@ -131,8 +134,13 @@ The article \cite{bgs:article} reviewed the algorithms available in the BGSLibra
   \caption{Background substraction algorithms investigated (adapted from \cite{bgslibrary})}
   \label{Table:bgs}
 \end{table}
+\fi
+
+The missing algorithm is Pixel-Based Adaptive Segmenter (PBAS), because the algorithm is based on patented ViBE algorithm, therefore removed from the BGSLibrary to avoid patent issue. However, the ViBE algorithm was existed in early versions of OpenCV as a non-free add-on module implemented with CUDA runs on GPU, therefore the ViBE algorithm was also investigated.
 
 \fref{Figure:bgs_frame} shows the foreground masks obtained from those 4 algorithms through 2 sample frame sequences available with the BGSLibrary \cite{bgslibrary}.
+
+{\color{red}ViBE}
 
 \begin{figure}[H]
   \centering
@@ -163,14 +171,22 @@ The article \cite{bgs:article} reviewed the algorithms available in the BGSLibra
   \label{Figure:bgs_frame}
 \end{figure}
 
+{\color{red}Background truth, how to tell best masks?}
+
 It can be seen from \fref{Figure:bgs_frame} that MultiLayerBGS gave the best foreground masks, but it was also the slowest algorithm on the testing platform.
 
 \section{Object tracking algorithms}
 
-Connected component analysis or blob detection (\sref{blob}) and movement tracking (\sref{bg:tracking}) algorithms were not implemented yet.
+%Connected component analysis or blob detection (\sref{blob}) and movement tracking (\sref{bg:tracking}) algorithms were not implemented yet.
 
-A suitable camera module need to be ordered and interfaced afterwards, then implement automatic feedback control of frame rate, cropping and down sampling.
+%A suitable camera module need to be ordered and interfaced afterwards, then implement automatic feedback control of frame rate, cropping and down sampling.
 
-\section{Adaptive power saving}
+\subsection{Connected component analysis}
+
+\subsection{Continuously Adaptive Meanshift}
+
+\subsection{Optical flow}
+
+\section{Adaptive power saving operation}
 
 \section{Video stream dataset}
