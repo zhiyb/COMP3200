@@ -20,7 +20,7 @@ OS_SIZE    = $(shell uname -m | sed -e "s/x86_64/64/" -e "s/armv7l/32/" -e "s/aa
 OS_ARCH    = $(shell uname -m)
 ARCH_FLAGS =
 
-SMS = 50 52
+#SMS = 50 52
 # Gencode arguments
 ifeq ($(OS_ARCH),armv7l)
 SMS ?= 20 30 32 35 37 50 52

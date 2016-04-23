@@ -59,10 +59,10 @@ endif
 .PHONY: all
 all: $(TRG)
 
-$(TRG): $(OBJ)
-	$(CXX) $^ $(LDFLAGS) -o $@
+#$(TRG): $(OBJ)
+#	$(CXX) $^ $(LDFLAGS) -o $@
 
-$(TRG)_cuda: $(OBJ)
+$(TRG): $(OBJ)
 	/usr/local/cuda-6.5/bin/nvcc -ccbin g++ -m32 -Xcompiler -mfloat-abi=hard -Xlinker --dynamic-linker=/lib/ld-linux-armhf.so.3 $^ $(LDFLAGS) -Xcompiler "-g -pg" -Xlinker "-g -pg" -o $@
 
 %.o: %.cu

@@ -17,15 +17,25 @@ along with BGSLibrary.  If not, see <http://www.gnu.org/licenses/>.
 #include <iostream>
 #include <iomanip>
 #include <opencv2/opencv.hpp>
+#include <opencv2/gpu/gpu.hpp>
+#include "opencv2/nonfree/gpu.hpp"
 
 #define IMGDATASET	"../bgslibrary/frames/"
 
 using namespace std;
 using namespace cv;
+using namespace cv::gpu;
 
 int main(int argc, char **argv)
 {
 	std::cout << "Using OpenCV " << CV_MAJOR_VERSION << "." << CV_MINOR_VERSION << "." << CV_SUBMINOR_VERSION << std::endl;
+
+	if (gpu::getCudaEnabledDeviceCount() == 0)
+		return -1;
+
+	gpu::setDevice(0);
+	GpuMat img, fgmask;
+	VIBE_GPU vibe;
 
 	int frameNumber = 1;
 	int key = 0;
@@ -35,22 +45,36 @@ int main(int argc, char **argv)
 		std::string fileName = IMGDATASET + ss.str() + ".png";
 		std::cout << "reading " << fileName << std::endl;
 
-		cv::Mat img_input = cv::imread(fileName, CV_LOAD_IMAGE_COLOR);
+		Mat img_input = imread(fileName, CV_LOAD_IMAGE_COLOR);
 
 		if (img_input.empty())
 			break;
 
 		imshow("input", img_input);
 
-#if 0
-		fileName = IMGDATASET + ss.str() + ".png";
-		cv::imwrite(fileName, img_mask);
-		if (frameNumber == 51) {
-			cv::imwrite(IMGDATASET "input.png", img_input);
-			cv::imwrite(IMGDATASET "mask.png", img_mask);
-			cv::imwrite(IMGDATASET "bkgmodel.png", img_bkgmodel);
-		}
+		img.upload(img_input);
+#if 1
+		gpu::GaussianBlur(img, img, Size(3, 3), 1.5);
 #endif
+		if (frameNumber == 0)
+			vibe.initialize(img);
+		else {
+			vibe(img, fgmask);
+
+			Mat mask;
+			fgmask.download(mask);
+
+			imshow("mask", mask);
+#if 1
+			fileName = IMGDATASET + ss.str() + ".png";
+			//cv::imwrite(fileName, mask);
+			if (frameNumber == 51) {
+				//cv::imwrite(IMGDATASET "input.png", img_input);
+				cv::imwrite(IMGDATASET "mask.png", mask);
+				//cv::imwrite(IMGDATASET "bkgmodel.png", img_bkgmodel);
+			}
+#endif
+		}
 
 		key = cvWaitKey(33);
 		frameNumber++;
