@@ -51,7 +51,7 @@ dmesg -c
 sync
 #read -s
 echo -e '\e[93mov5647.sh:\e[0m'
-/home/ubuntu/bin/ov5647.sh || true
+/home/ubuntu/bin/ov5647_still.sh || true
 sleep 1
 echo -e '\e[93mdmesg:\e[0m'
 dmesg -c
