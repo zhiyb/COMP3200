@@ -1,12 +1,9 @@
 #SRC	= main.cpp
 #SRC	= edges.cpp
-SRC	= circles.cpp
+#SRC	= circles.cpp
+SRC	= bgs_vibe.cpp
 
-SRC	+= capture.cpp yavta.c
-
-#SRC	+= opencv2/precomp.cpp
-#SRC	+= opencv2/vibe_gpu.cpp
-#SRC	+= opencv2/vibe.cu
+#SRC	+= capture.cpp yavta.c
 
 TRG	= OpenCV
 DEV	= /dev/video0
@@ -20,12 +17,13 @@ OBJ	= $(subst .S,.o,$(subst .c,.o,$(subst .cpp,.o,$(SRC:.cu=.o))))
 CC	= gcc
 BGSLIB	= ../bgslibrary
 FLAGS	+= -g -pg -Wall -Ofast -mfpu=neon -funsafe-math-optimizations -fabi-version=8 -Wabi -march=armv7-a -fopenmp
-FLAGS	+= -I. -I/usr/local/cuda-6.5/targets/armv7-linux-gnueabihf/include
+FLAGS	+= -I. -I.. -I../bgslibrary -I/usr/local/cuda-6.5/targets/armv7-linux-gnueabihf/include
 FLAGS	+= -DHAVE_OPENCV_GPU -DHAVE_CUDA
-CFLAGS	+= $(FLAGS) -I../bgslibrary -Wno-unused-but-set-variable
+CFLAGS	+= $(FLAGS) -Wno-unused-but-set-variable
 CXXFLAGS	+= $(FLAGS) -std=c++11 -I$(BGSLIB) -Wno-unused-but-set-variable
 LDFLAGS	+= -g -O2
 LDFLAGS += -L$(BGSLIB) -lbgslibrary
+LDFLAGS	+= -L../opencv2 -lopencv_nonfree
 LDFLAGS	+= -lglfw3 -lGLEW -lGL
 LDFLAGS	+= -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_gpu -lopencv_video
 LDFLAGS	+= -lXxf86vm -lpthread -lXrandr -lXinerama -lXi -lXcursor -lX11 -ldl
