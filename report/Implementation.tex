@@ -186,9 +186,7 @@ Noticeable frame rate drop and latency was experienced (only about 3 fps) when r
 
 The ViBE algorithm from early versions of OpenCV as a non-free add-on module implemented with CUDA runs on GPU, which is also the base of the missing PBAS algotihm, was also investigated.
 
-\fref{Figure:bgs_frame} shows the foreground masks obtained from those 4 algorithms through 2 sample frame sequences came with the BGSLibrary \cite{bgslibrary}.
-
-{\color{red}ViBE}
+\fref{Figure:bgs_frame} shows the foreground masks obtained at the same frame index by those 5 algorithms. The dataset used are 2 sample highway surveillance video datasets came with the BGSLibrary \cite{bgslibrary}.
 
 \begin{figure}[htb]
   \centering
@@ -207,13 +205,13 @@ The ViBE algorithm from early versions of OpenCV as a non-free add-on module imp
   \includegraphics[width=0.3\columnwidth]{bgs_video/DPWrenGABGS/mask}
   \includegraphics[width=0.3\columnwidth]{bgs_video/ViBE/mask}
 
-  \caption{Results obtained from background subtraction algorithms. From left to right column: input sample 1, foreground mask obtained, input sample 2, foreground mask obtained. From top to bottom row: MultiLayerBGS, MixtureOfGaussianV1BGS, LBAdaptiveSOM and DPWrenGABGS.}
+  \caption{Exemplary frames of results obtained from background subtraction algorithms. Every 2 rows: Input frame, foreground mask obtained by MultiLayerBGS, MixtureOfGaussianV1BGS, LBAdaptiveSOM, DPWrenGABGS and ViBE algorithms.}
   \label{Figure:bgs_frame}
 \end{figure}
 
-{\color{red}Background truth, how to tell best masks?}
+%{\color{red}Background truth, how to tell best masks?}
 
-It can be seen from \fref{Figure:bgs_frame} that MultiLayerBGS gave the best foreground masks, but it was also the slowest algorithm on the testing platform.
+The better the mask matches the moving object, the better the algorithms is. It can be seen from \fref{Figure:bgs_frame} that MultiLayerBGS gave less holes in the foreground masks, LBAdaptiveSOM had large environment noises, MixtureOfGaussianV1BGS and DPWrenGABGS both produced a large hole in the masks from the second sample dataset. There are some false positions in the foreground mask obtained by ViBE from the first dataset, because the dataset was too short, the ViBE algorithm were not fully learnt the background model yet. However the masks it computed were still precisely close to the input frame, especially from the second dataset.
 
 \section{Object tracking algorithms}
 
