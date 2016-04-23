@@ -91,28 +91,27 @@ Finally, an input handing thread for debugging and controlling through command l
 
 \subsection{Colour based}
 
-An simple implementation \cite{MOTBOC.git} of colour filtering object detection algorithm was investigated, as shown in \fref{imp:MOTBOC}.
+A simple implementation of colour filtering object detection algorithm \cite{MOTBOC.git} was investigated, as shown in \fref{imp:MOTBOC}.
 
-{\color{red}UPDATE!}
+However, this implementation is very limited, it can only detects objects with single colour, cannot distinguish the objects from similar background colour, relies heavily on manually adjusted colour threshold values, very sensitive to the variations of colour from different cameras and environment lighting conditions, therefore not very adaptable. A complex environment may also results into undesired detections, as shown in \fref{imp:MOTBOC_F}. Background objects that has similar colour to the desired red objects were detected as foreground red objects, and some target objects were not been identified and misclassified because of slight change in lighting condition, the objects' colour seen by the camera were no longer inside the colour filters' ranges.
+
 \begin{figure}[H]
   \centering
-  \includegraphics[width=0.6\columnwidth]{"MOTBOC failure"}
-  \caption{Simple multi object tracking based on colour \cite{MOTBOC.git} in ideal situation}
+  \subfigure [] {
+    \includegraphics[width=0.4\columnwidth]{MOTBOC_imp}
+    \label{imp:MOTBOC_}
+  }
+  \subfigure [] {
+    \includegraphics[width=0.4\columnwidth]{MOTBOC_fail}
+    \label{imp:MOTBOC_F}
+  }
+  \caption{Simple multi object tracking based on colour \cite{MOTBOC.git}. \subref{imp:MOTBOC_} ideal situation, \subref{imp:MOTBOC_F} messed up in a complex environment with slightly different lighting condition.}
   \label{imp:MOTBOC}
 \end{figure}
 
-However, this implementation is very limited, it can only detects objects with single colour, cannot distinguish the objects from similar background colour, relies heavily on manually adjusted colour threshold values, and is very sensitive to the variations of colour spaces from different cameras, therefore not very adaptable. A complex environment may also results into lots of undesired detections, as shown in \fref{Figure:MOTBOC_F}.
+%{\color{red}Descriptions about the failure}
 
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.6\columnwidth]{"MOTBOC failure"}
-  \caption{Simple multi object tracking based on colour \cite{MOTBOC.git} messed up in a complex environment}
-  \label{Figure:MOTBOC_F}
-\end{figure}
-
-{\color{red}Descriptions about the failure}
-
-\subsection{Shape based}
+\subsection{Circle detection}
 
 OpenCV's implementation of Hough Circle Transform for circle detection was investigated, as shown by \fref{Figure:circles}.
 
@@ -136,13 +135,13 @@ OpenCV's implementation of Hough Circle Transform for circle detection was inves
     \includegraphics[width=0.45\columnwidth]{simple_circles}
     \label{Figure:edges:circles}
   }
-  \caption{Circle detection. \subref{Figure:edges:original} The original image, \subref{Figure:edges:blur} image converted to gray scale and blurred, \subref{Figure:edges:edges} edges detected, \subref{Figure:edges:circles} circles detected}
+  \caption{Circle detection. \subref{Figure:edges:original} The original image, \subref{Figure:edges:blur} image converted to gray scale and blurred, \subref{Figure:edges:edges} edges extracted, \subref{Figure:edges:circles} circles detected}
   \label{Figure:circles}
 \end{figure}
 
-The frame captured from camera (\fref{Figure:edges:original}), was first converted to grey scale then blurred, as shown in \fref{Figure:edges:blur}. Blur or smoothing is often necessarily to reduce false object edges that might be detected. Afterwards the object edges in the image was extracted as in \fref{Figure:edges:edges}. Finally \fref{Figure:edges:circles} shows the circles detected by the algorithm.
+The frame captured from camera (\fref{Figure:edges:original}), was first converted to grey scale then blurred, as shown in \fref{Figure:edges:blur}. Blur or smoothing is necessarily to reduce false object edges that might be detected. Afterwards the object edges in the image was extracted as in \fref{Figure:edges:edges}. Finally \fref{Figure:edges:circles} shows the circles detected by the algorithm.
 
-However, this algorithm is still very limited and inaccurate, as shown by \fref{Figure:circles}, the coin at the top right corner had not been detected, because it appeared to be an eclipse instead of a prefect circle to the algorithm because of camera perspective. Furthermore, in order to detect multiple geometric shapes, different algorithms would be required for each of the different shapes.
+However, this algorithm is still very limited and inaccurate, as shown by \fref{Figure:circles}, the coin at the top right corner had not been detected, because it appeared to be an ellipse instead of a prefect circle because of camera perspective. Furthermore, in order to detect multiple geometric shapes, different algorithms would be required for each of the different shapes.
 
 \subsection{Cascade Classifier}
 
@@ -157,15 +156,15 @@ The OpenCV's cascade classifier implementation \cite{opencv:cc} of face and eye 
   \label{Figure:cc_face}
 \end{figure}
 
-Noticeable {\color{red}DATA?} frame rate drop and latency was experienced (about only {\color{red}xx} fps) when experiments with the cascade classifier implementation on the testing platform, suggests it might not be a suitable algorithm for real-time object tracking application on embedded platforms.
+Noticeable frame rate drop and latency was experienced (only about 3 fps) when running the cascade classifier implementation on the testing platform, suggests it might not be a suitable algorithm for real-time object tracking application on embedded platforms.
 
 \subsection{Motion based}
 
-This article \cite{bgs:article} reviewed the algorithms available in the BGSLibrary, ranked 5 algorithms as the best methods for accuracy, 4 of 5 algorithms listed in \tref{Table:bgs} were investigated in this project.
+4 out of the 5 best algorithms reviewed by the article \cite{bgs:article} that are available in the BGSLibrary as listed in \tref{Table:bgs} were investigated in this project.
 
-{\color{red}GPU implementation?}
+%{\color{red}GPU implementation?}
 
-\iffalse
+%\iffalse
 \begin{table}[H]
   \centering
   \begin{tabular}{cc}
@@ -181,39 +180,33 @@ This article \cite{bgs:article} reviewed the algorithms available in the BGSLibr
   \caption{Background substraction algorithms investigated (adapted from \cite{bgslibrary})}
   \label{Table:bgs}
 \end{table}
-\fi
+%\fi
 
-The missing algorithm is Pixel-Based Adaptive Segmenter (PBAS), because the algorithm is based on patented ViBE algorithm, therefore removed from the BGSLibrary to avoid patent issue. However, the ViBE algorithm was existed in early versions of OpenCV as a non-free add-on module implemented with CUDA runs on GPU, therefore the ViBE algorithm was also investigated.
+%The missing Pixel-Based Adaptive Segmenter (PBAS) algorithm , because the algorithm is based on patented ViBE algorithm, therefore removed from the BGSLibrary to avoid patent issue. However,
 
-\fref{Figure:bgs_frame} shows the foreground masks obtained from those 4 algorithms through 2 sample frame sequences available with the BGSLibrary \cite{bgslibrary}.
+The ViBE algorithm from early versions of OpenCV as a non-free add-on module implemented with CUDA runs on GPU, which is also the base of the missing PBAS algotihm, was also investigated.
+
+\fref{Figure:bgs_frame} shows the foreground masks obtained from those 4 algorithms through 2 sample frame sequences came with the BGSLibrary \cite{bgslibrary}.
 
 {\color{red}ViBE}
 
-\begin{figure}[H]
+\begin{figure}[htb]
   \centering
-  \includegraphics[width=0.24\columnwidth]{bgs_frame/MultiLayerBGS/input}
-  \includegraphics[width=0.24\columnwidth]{bgs_frame/MultiLayerBGS/mask}
-  %\includegraphics[width=0.32\columnwidth]{bgs_frame/MultiLayerBGS/bkgmodel}
-  \includegraphics[width=0.24\columnwidth]{bgs_video/MultiLayerBGS/input}
-  \includegraphics[width=0.24\columnwidth]{bgs_video/MultiLayerBGS/mask}
+  \includegraphics[width=0.3\columnwidth]{bgs_frame/input}
+  \includegraphics[width=0.3\columnwidth]{bgs_frame/MultiLayerBGS/mask}
+  \includegraphics[width=0.3\columnwidth]{bgs_frame/MixtureOfGaussianV1BGS/mask}
+  \includegraphics[width=0.3\columnwidth]{bgs_frame/LBAdaptiveSOM/mask}
+  \includegraphics[width=0.3\columnwidth]{bgs_frame/DPWrenGABGS/mask}
+  \includegraphics[width=0.3\columnwidth]{bgs_frame/ViBE/mask}
 
-  \includegraphics[width=0.24\columnwidth]{bgs_frame/MixtureOfGaussianV1BGS/input}
-  \includegraphics[width=0.24\columnwidth]{bgs_frame/MixtureOfGaussianV1BGS/mask}
-  \includegraphics[width=0.24\columnwidth]{bgs_video/MixtureOfGaussianV1BGS/input}
-  \includegraphics[width=0.24\columnwidth]{bgs_video/MixtureOfGaussianV1BGS/mask}
-  %\includegraphics[width=0.32\columnwidth]{na}
 
-  \includegraphics[width=0.24\columnwidth]{bgs_frame/LBAdaptiveSOM/input}
-  \includegraphics[width=0.24\columnwidth]{bgs_frame/LBAdaptiveSOM/mask}
-  \includegraphics[width=0.24\columnwidth]{bgs_video/LBAdaptiveSOM/input}
-  \includegraphics[width=0.24\columnwidth]{bgs_video/LBAdaptiveSOM/mask}
-  %\includegraphics[width=0.32\columnwidth]{na}
+  \includegraphics[width=0.3\columnwidth]{bgs_video/input}
+  \includegraphics[width=0.3\columnwidth]{bgs_video/MultiLayerBGS/mask}
+  \includegraphics[width=0.3\columnwidth]{bgs_video/MixtureOfGaussianV1BGS/mask}
+  \includegraphics[width=0.3\columnwidth]{bgs_video/LBAdaptiveSOM/mask}
+  \includegraphics[width=0.3\columnwidth]{bgs_video/DPWrenGABGS/mask}
+  \includegraphics[width=0.3\columnwidth]{bgs_video/ViBE/mask}
 
-  \includegraphics[width=0.24\columnwidth]{bgs_frame/DPWrenGABGS/input}
-  \includegraphics[width=0.24\columnwidth]{bgs_frame/DPWrenGABGS/mask}
-  \includegraphics[width=0.24\columnwidth]{bgs_video/DPWrenGABGS/input}
-  \includegraphics[width=0.24\columnwidth]{bgs_video/DPWrenGABGS/mask}
-  %\includegraphics[width=0.32\columnwidth]{na}
   \caption{Results obtained from background subtraction algorithms. From left to right column: input sample 1, foreground mask obtained, input sample 2, foreground mask obtained. From top to bottom row: MultiLayerBGS, MixtureOfGaussianV1BGS, LBAdaptiveSOM and DPWrenGABGS.}
   \label{Figure:bgs_frame}
 \end{figure}
