@@ -95,7 +95,7 @@ However, there are several distinctive background subtraction algorithms availab
 
 \subsection{Object tracking algorithm}
 
-Connected component analysis is used after foreground masks being extracted from each frame. Specifically, the simple find contour function that is also used by the simple blob detector from OpenCV was used. It is very simple, but still sufficient to extract blobs from black and white masks without intensive computation.
+Connected component analysis is used after foreground masks being extracted from each frame. Specifically, the simple find contours function that is also used by the simple blob detector from OpenCV was used. It is very simple, but still sufficient to extract blobs from black and white masks without intensive computation.
 
 Afterwards, the good features to track function is used to determine feature points inside foreground masks, then related to the objects detected respectively. After that, sparse set optical flow will be applied to track the movements of feature points in following frames. By relating the feature points back to objects, the objects can then be tracked.
 

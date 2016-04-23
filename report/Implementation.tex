@@ -221,6 +221,30 @@ The better the mask matches the moving object, the better the algorithms is. It 
 
 \subsection{Connected component analysis}
 
+Connected component analysis was done as shown by \fref{imp:cca}. The baseline highway sample dataset from CDNET \cite{goyette2012changedetection} was used, it has 1700 frames, 30 frames per second and the resolution is $320 \times 240$. The ViBE background subtraction algorithm was used to extract foreground masks as shown by \fref{imp:cca:mask}, for connected component analysis algorithm to evaluate. OpenCV's find contours functions was used to extract the blobs. However, in order for it to work properly, the masks need to be cleaned up first. This was done by applying a find contours function first, filtering out small contours that are mostly likely noises, then redraw the contours. That may still leaves unclosed holes, therefore a Morphology transformation \cite{serra1982image} was applied afterwards to close those holes. \fref{imp:cca:mask2} shows the mask been cleaned up. Finally, apply the find contours function to the enhanced foreground mask, results in numbers of contours, outlined on the input frame shown by \fref{imp:cca:drawing}.
+
+\begin{figure}[htb]
+  \centering
+  \subfigure [] {
+    \includegraphics[width=0.4\columnwidth]{contours/input}
+    \label{imp:cca:input}
+  }
+  \subfigure [] {
+    \includegraphics[width=0.4\columnwidth]{contours/mask}
+    \label{imp:cca:mask}
+  }
+  \subfigure [] {
+    \includegraphics[width=0.4\columnwidth]{contours/img_mask}
+    \label{imp:cca:mask2}
+  }
+  \subfigure [] {
+    \includegraphics[width=0.4\columnwidth]{contours/drawing}
+    \label{imp:cca:drawing}
+  }
+  \caption{Contours extracted from foreground masks. \subref{imp:cca:input} input frame, \subref{imp:cca:mask} foreground mask extracted by ViBE, \subref{imp:cca:mask2} enhanced foreground mask, \subref{imp:cca:drawing} contours (blobs) extracted}
+  \label{imp:cca}
+\end{figure}
+
 \subsection{Continuously Adaptive Meanshift}
 
 \subsection{Optical flow}
