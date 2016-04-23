@@ -5,6 +5,7 @@
 % {\color{red}Specification of works, quantifiable}
 
 \begin{itemize}
+	\setlength\itemsep{0em}
 	\item Customise a NVIDIA Jetson TK1 embedded board and its Linux operating system for power efficiency.
 	\item Interface an OV5647 camera to the target platform through MIPI-CSI interface and V4L2 driver platform.
 	\item Configure the camera including different resolution modes through V4L2 interface.
@@ -17,6 +18,17 @@
 	\item Build a camera and algorithm power consumption model.
 	\item Use the model to estimate power saving achieved through adaptive operation.
 \end{itemize}
+
+\section{System block diagram}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\columnwidth]{block}
+  \caption{Purposed system design block diagram.}
+  \label{block}
+\end{figure}
+
+% {\color{red}BLOCK DIAGRAM}
 
 \section{Hardware}
 
@@ -42,9 +54,16 @@ A general x86 architecture computer running Microsoft Windows operation system w
 
 % Specific camera module to be used was not determined yet at the time this progress report was written, but it would be a high resolution camera module from OmniVision \cite{ovt} that can be easily interfaced and directly controlled with the peripheral interfaces on the Jetson TK1 platform. A Linux kernel module driver probably need to be developed in order to control the camera parameters and operations from program running in user space.
 
-The raspberry pi camera module was used in this project, it features a 5 mega pixels OV5647 camera sensor manufactured by OmniVision Technologies Inc. It is relatively more expensive than buying the camera sensor only, but the raspberry pi camera module is more broadly available in small quantities and can be easily connected to the board without the need to design a dedicated adapter PCB. It uses the MIPI-CSI interface which the board has native support for, the complete data sheet is also available around the Internet and it features subsampling, frame rate control, auto exposure and white balance functions etc. which are essential to adaptive operation.
+The Raspberry Pi camera module was used in this project, it features a 5 mega pixels OV5647 camera sensor manufactured by OmniVision Technologies Inc. It is relatively more expensive than buying the camera sensor only, but the raspberry pi camera module is more broadly available in small quantities and can be easily connected to the board without the need to design a dedicated adapter PCB. It uses the MIPI-CSI interface which the board has native support for, the complete data sheet is also available around the Internet and it features subsampling, frame rate control, auto exposure and white balance functions etc. which are essential to adaptive operation.
 
-The only difficulty is that the camera sensor can only output frames in raw Bayer pattern format \cite{bayer1976color}, but since the format can be efficiently converted using the GPU cores and CUDA, that is not a significant issue.
+The only difficulty is that the camera sensor can only output frames in raw Bayer pattern format \cite{bayer1976color}, as shown by \fref{bayer}. A typical colourful computer image consists of 3 primary colour channels per pixel, which are red, green and blue, i.e. RGB colour space. However, because of physical and manufacture constrains, most of camera sensors including the camera used in this project have only one intensity sensor per pixel with a specific colour filter, arranged in Bayer pattern format, therefore image processing algorithm need to be applied to convert or approximate the raw data to produce full colour images. Some of the camera sensors have a built-in image processor that applies the algorithm automatically, but the Raspberry Pi camera sensor used in this project doesn't have that functionality, therefore the algorithm need to be implemented by the application. But since the format can be efficiently converted using the GPU cores and CUDA, that is not a significant issue.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.6\columnwidth]{bayer}
+  \caption{The Bayer pattern pixel arrangement used by the camera module (source from OV5647 datasheet).}
+  \label{bayer}
+\end{figure}
 
 \section{Software}
 

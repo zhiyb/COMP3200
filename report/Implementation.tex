@@ -1,12 +1,21 @@
 \chapter{Implementation}
 
-\section{Camera driver}
+\section{Camera module and driver development}
+
+The Raspberry Pi camera module was connected to the Jetson TK1 board as shown by \fref{imp:schematic}. A 74HCT245 bus transceiver chip was used as a buffer for voltage level conversion, since GPIOs on the Jetson board are using $1.8V$ voltage level while the Raspberry Pi module is working at $3.3V$ voltage level.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.7\columnwidth]{schematic}
+  \caption{Schematic of Jetson board connect to a Raspberry Pi camera module.}
+  \label{imp:schematic}
+\end{figure}
 
 The camera driver was implemented based on Linux Video for Linux second version (V4L2) framework. It is a great framework that supports varies kinds of different camera sensor models with the same user space interface, across vast number of different embedded Linux platforms, enables cross platform adaptability with accessibility to low level controls.
 
-For adaptive operation, the driver implemented supports different resolution modes from the camera and changing frame interval in great precision. A special control instruction that can change any of the control registers inside the camera sensor was also developed for debugging and controlling purpose.
+For adaptive operation, the driver implemented supports different resolution modes available from the camera and precise frame interval alteration. A special control instruction that can change any of the control registers inside the camera sensor was also developed for debugging and controlling purpose.
 
-A GPIO connected to a LED on the camera module was also controllable through the driver, to give indications about camera activity, used for debugging purpose and triggering external power analyser.
+The GPIO on the camera module was controlling a LED on the module, and it was controllable through the driver. Therefore by controlling the GPIO, it not only can gives indications about camera activity, but also is very useful for debugging and triggering external power analyser.
 
 \section{Application}
 
@@ -19,19 +28,19 @@ A GPIO connected to a LED on the camera module was also controllable through the
 % 	iv. OpenCV viewing thread.
 % 	Display results and handle GUI user input, slow, can be suspended for power saving.
 
-\subsection{Bayer pattern handling}
+%\subsection{Bayer pattern handling}
 
-A typical colourful computer image consists of 3 primary colour channels {\color{red}CITE}, which are red, green and blue. However, because of physical and manufacture constrains, most of camera sensors including the camera used in this project have only one intensity sensor per pixel of a specific colour, arranged in a special pattern called Bayer pattern {\color{red}CITE}, therefore image processing algorithm need to be applied to convert or approximate the raw data to produce full colour images. Some of the camera sensors have a built-in image processor that applies the algorithm automatically, but the camera used in this project doesn't have that functionality, therefore the algorithm need to be implemented by the application.
+% A typical colourful computer image consists of 3 primary colour channels {\color{red}CITE}, which are red, green and blue. However, because of physical and manufacture constrains, most of camera sensors including the camera used in this project have only one intensity sensor per pixel of a specific colour, arranged in a special pattern called Bayer pattern {\color{red}CITE}, therefore image processing algorithm need to be applied to convert or approximate the raw data to produce full colour images. Some of the camera sensors have a built-in image processor that applies the algorithm automatically, but the camera used in this project doesn't have that functionality, therefore the algorithm need to be implemented by the application.
 
-{\color{red}Some diagrams show how it is done.}
+%{\color{red}Some diagrams show how it is done.}
 
 \subsection{Application structure}
 
-An application was developed to receive video stream from the camera or read continuous frame images from the dataset, then apply OpenCV processing, real-time input and output video preview as well as camera control. To take the benefits of the heterogeneous architecture more efficiently and overcome issues with buffer updates, the application was implemented using a multi-threading approach with inter-thread synchronisation mechanisms.
+An application was developed to receive video stream from the camera or from a testing dataset, then apply OpenCV processing, real-time input and output video preview as well as adaptive camera control. To take the benefits of the heterogeneous architecture more efficiently and overcome issues with buffer updates, the application was implemented using multi-threading approach with inter-thread synchronisation mechanisms.
 
-The main thread is responsible for initialisation, camera control, capture buffer synchronisation and management. It allocates several buffers for the camera driver, assign filled buffers to other processing threads and recycle processed buffers back to camera driver.
+The main thread in camera mode is responsible for initialisation, camera control, capture buffer synchronisation and management. It allocates several buffers for the camera driver, assign filled buffers to other processing threads and recycle processed buffers back to camera driver. In dataset mode it reads the sequence of frames, skips frames according to frame rate set by adaptive operation.
 
-Afterwards, an OpenGL video preview thread was used to show the frames captured from camera to a monitor, independent from algorithm processing. This thread can be independently stalled so that it would not consume any processing power when analysing performances and power consumptions of algorithms.
+After obtained a frame from video stream, an OpenGL live video preview thread was then used to show the frame to a monitor, independent from the processing algorithm. This thread can be independently stalled so that it would not consume any processing power when analysing performances and power consumptions of algorithms. In camera mode, it will convert the frames received from Bayer pattern format to RGB colour space for rendering onto the screen. This process is done by GPU through OpenGL shaders, therefore is extremely fast, around 200 FPS for $640 \times 480$ resolution if synchronisation with main thread is disabled.
 
 The OpenCV algorithms runs on both CPU and GPU, and OpenCV has a constrain that to view the processed images, the application needs to call a user interface update function that is time consuming but not power intensive, therefore 2 threads was used in a pipeline style in order to speed up the processing. The buffers received from main thread will first go through the processing thread, then pass to the second thread for display on the monitor. The display thread can also be stalled for power saving.
 
