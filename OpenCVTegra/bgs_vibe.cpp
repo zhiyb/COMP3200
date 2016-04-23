@@ -20,7 +20,8 @@ along with BGSLibrary.  If not, see <http://www.gnu.org/licenses/>.
 #include <opencv2/gpu/gpu.hpp>
 #include "opencv2/nonfree/gpu.hpp"
 
-#define IMGDATASET	"../bgslibrary/frames/"
+//#define IMGDATASET	"../bgslibrary/frames/"
+#define VIDDATASET	"../bgslibrary/dataset/"
 
 using namespace std;
 using namespace cv;
@@ -37,15 +38,31 @@ int main(int argc, char **argv)
 	GpuMat img, fgmask;
 	VIBE_GPU vibe;
 
+#ifdef VIDDATASET
+	VideoCapture cap;
+	std::cout << "Openning: " VIDDATASET "video.avi" << std::endl;
+	cap.open(VIDDATASET "video.avi");
+	if(!cap.isOpened()) {
+		std::cerr << "Cannot initialize video!" << std::endl;
+		return -1;
+	}
+#endif
+
 	int frameNumber = 1;
 	int key = 0;
+	Mat img_input;
 	while (key != 'q') {
+#ifdef IMGDATASET
 		std::stringstream ss;
 		ss << frameNumber;
 		std::string fileName = IMGDATASET + ss.str() + ".png";
 		std::cout << "reading " << fileName << std::endl;
 
-		Mat img_input = imread(fileName, CV_LOAD_IMAGE_COLOR);
+		img_input = imread(fileName, CV_LOAD_IMAGE_COLOR);
+#endif
+#ifdef VIDDATASET
+		cap >> img_input;
+#endif
 
 		if (img_input.empty())
 			break;
@@ -65,13 +82,21 @@ int main(int argc, char **argv)
 			fgmask.download(mask);
 
 			imshow("mask", mask);
-#if 1
+#ifdef IMGDATASET
 			fileName = IMGDATASET + ss.str() + ".png";
 			//cv::imwrite(fileName, mask);
 			if (frameNumber == 51) {
 				//cv::imwrite(IMGDATASET "input.png", img_input);
 				cv::imwrite(IMGDATASET "mask.png", mask);
 				//cv::imwrite(IMGDATASET "bkgmodel.png", img_bkgmodel);
+			}
+#endif
+#ifdef VIDDATASET
+			if (frameNumber == 126) {
+				cv::imwrite(VIDDATASET "input.png", img_input);
+				cv::imwrite(VIDDATASET "mask.png", mask);
+				//cv::imwrite(VIDDATASET "bkgmodel.png", img_bkgmodel);
+				break;
 			}
 #endif
 		}
