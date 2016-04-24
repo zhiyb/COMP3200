@@ -253,13 +253,19 @@ Connected component analysis was done as shown by \fref{imp:cca}. The baseline h
     \includegraphics[width=0.3\columnwidth]{optical/between/prev}
     \label{imp:of:prev}
   }
+  \iffalse
   \subfigure [] {
     \includegraphics[width=0.3\columnwidth]{optical/between/prev_mask2}
     \label{imp:of:prev_mask}
   }
+  \fi
   \subfigure [] {
     \includegraphics[width=0.3\columnwidth]{optical/between/prev_input_of}
     \label{imp:of:prev_input_of}
+  }
+  \subfigure [] {
+    \includegraphics[width=0.3\columnwidth]{optical/between/prev_drawing}
+    \label{imp:of:prev_drawing}
   }
   \subfigure [] {
     \includegraphics[width=0.3\columnwidth]{optical/between/next}
@@ -273,7 +279,7 @@ Connected component analysis was done as shown by \fref{imp:cca}. The baseline h
     \includegraphics[width=0.3\columnwidth]{optical/between/next_drawing}
     \label{imp:of:next_drawing}
   }
-  \caption{Optical flow tracking between 2 frames. \subref{imp:of:prev} previous frame, \subref{imp:of:prev_mask} foreground mask at the previous frame, \subref{imp:of:prev_input_of} masked previous frame, \subref{imp:of:next} next frame, \subref{imp:of:next_input_of} masked next frame, \subref{imp:of:next_drawing} optical flow tracking result.}
+  \caption{Optical flow tracking between 2 adjacent frames. \subref{imp:of:prev} previous frame, \subref{imp:of:prev_input_of} masked previous frame, \subref{imp:of:prev_drawing} optical tracking result at the previous frame, \subref{imp:of:next} next frame, \subref{imp:of:next_input_of} masked next frame, \subref{imp:of:next_drawing} optical flow tracking result at the next frame. {\color{red}Red circles}: Destinations of feature points generated from previous frame; {\color{dkgreen}Green lines}: Movements of the feature points; {\color{blue}Blue outline}: Object blobs extracted from foreground mask.}
   \label{imp:cca}
 \end{figure}
 
