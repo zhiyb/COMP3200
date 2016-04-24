@@ -1,7 +1,8 @@
 #SRC	= main.cpp
 #SRC	= edges.cpp
 #SRC	= circles.cpp
-SRC	= tracking.cpp
+#SRC	= tracking.cpp
+SRC	= adaptive.cpp
 
 #SRC	+= capture.cpp yavta.c
 

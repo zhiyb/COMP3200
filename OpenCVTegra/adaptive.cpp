@@ -7,9 +7,7 @@
 #include <opencv2/gpu/gpu.hpp>
 #include "opencv2/nonfree/gpu.hpp"
 
-//#define IMGDATASET	"../bgslibrary/frames/"
-//#define VIDDATASET	"../bgslibrary/dataset/"
-#define DATASET	"dataset/baseline/highway/"
+#define DATASET	"dataset/baseline/office/"
 
 #define SHOW
 #define BLOB_SIZE	8
@@ -29,16 +27,6 @@ int main(int argc, char **argv)
 	gpu::setDevice(0);
 	VIBE_GPU vibe;
 
-#ifdef VIDDATASET
-	VideoCapture cap;
-	std::cout << "Openning: " VIDDATASET "video.avi" << std::endl;
-	cap.open(VIDDATASET "video.avi");
-	if(!cap.isOpened()) {
-		std::cerr << "Cannot initialize video!" << std::endl;
-		return -1;
-	}
-#endif
-#ifdef DATASET
 	int start, total;
 
 	{
@@ -52,7 +40,6 @@ int main(int argc, char **argv)
 	}
 
 	clog << "Starts at frame " << start << ", " << total << " frames in total." << endl;
-#endif
 
 	GpuMat img_gpu, img_grey_gpu, mask_gpu;
 	Mat img, mask, drawing, prev_grey;
@@ -63,18 +50,6 @@ int main(int argc, char **argv)
 	int64_t past = getTickCount();
 	uint64_t count = 0;
 	do {
-#ifdef IMGDATASET
-		std::stringstream ss;
-		ss << frameNumber;
-		std::string fileName = IMGDATASET + ss.str() + ".png";
-		std::cout << "reading " << fileName << std::endl;
-
-		img_input = imread(fileName, CV_LOAD_IMAGE_COLOR);
-#endif
-#ifdef VIDDATASET
-		cap >> img_input;
-#endif
-#ifdef DATASET
 		// Frame control
 		if (frameNumber > total)
 			break;
@@ -92,14 +67,15 @@ int main(int argc, char **argv)
 		imgfile << DATASET "/input/in" << setw(6) << setfill('0') << frameNumber << ".jpg";
 		//clog << "Reading file " << imgfile.str() << endl;
 		img = imread(imgfile.str().c_str());
-#endif
 		if (img.empty())
 			break;
 
 #ifdef SHOW
 		//imshow("input", img);
 #endif
+		//resize(img, img, Size(), 0.5f, 0.5f);
 		img_gpu.upload(img);
+		//gpu::resize(img_gpu, img_gpu, Size(), 0.5f, 0.5f);
 		gpu::cvtColor(img_gpu, img_grey_gpu, CV_RGB2GRAY);
 
 		// ViBE foreground mask
@@ -107,13 +83,7 @@ int main(int argc, char **argv)
 		gpu::GaussianBlur(img_gpu, img_gpu, Size(3, 3), 1.5);
 #endif
 		vibe(img_gpu, mask_gpu);
-
 		mask_gpu.download(mask);
-		Mat mask_bak = mask.clone();
-
-#ifdef SHOW
-		//imshow("mask", mask);
-#endif
 
 		// Enhance foreground mask
 #if 1
@@ -138,10 +108,14 @@ int main(int argc, char **argv)
 			cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, element);
 		}
 #endif
-		Mat mask2_bak = mask.clone();
-#ifdef SHOW
-		//imshow("mask2", mask);
-#endif
+
+		Mat img_grey_tmp;
+		img_grey_gpu.download(img_grey_tmp);
+		Mat img_grey;
+		//imshow("grey", img_grey);
+		img_grey_tmp.copyTo(img_grey, mask);
+		//imshow("mask", mask);
+		//imshow("masked", img_grey);
 
 		// Extract contours
 		img.copyTo(drawing);
@@ -164,20 +138,12 @@ int main(int argc, char **argv)
 
 				//Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255));
 				Scalar color(255.f, 0.f, 0.f);
-				cv::drawContours(drawing, *contours, i, color, 2, 8, hierarchy, 0, Point());
+				cv::drawContours(drawing, *contours, i, color, 1, 8, hierarchy, 0, Point());
 			}
 		}
 #endif
-#ifdef SHOW
-		//imshow("drawing", drawing);
-#endif
 
 		// Optical flow tracking between frames
-		Mat img_grey, img_grey_tmp;
-		img_grey_gpu.download(img_grey_tmp);
-		//img_grey = img_grey_tmp;
-		img_grey_tmp.copyTo(img_grey, mask2_bak);
-
 		vector<Point2f> prevPts, nextPts;
 		vector<uchar> ofStatus;
 		if (!prev_grey.empty() && prev_contours != 0) {
@@ -189,21 +155,10 @@ int main(int argc, char **argv)
 					prevPts.push_back(point);
 #endif
 			if (prevPts.size() > 0) {
-				vector<Point2f> pts, bkpPts = prevPts;
 				vector<float> err;
 				//TermCriteria termcrit(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 20, 0.03);
 				Size winSize(32, 32);
-				//calcOpticalFlowPyrLK(prev_grey, img_grey, bkpPts, pts, ofStatus, err, winSize, 2);
 				calcOpticalFlowPyrLK(prev_grey, img_grey, prevPts, nextPts, ofStatus, err, winSize, 2);
-#if 0
-				prevPts.clear();
-				nextPts.clear();
-				for (unsigned int i = 0; i < pts.size(); i++)
-					if (ofStatus[i]) {
-						prevPts.push_back(bkpPts[i]);
-						nextPts.push_back(pts[i]);
-					}
-#endif
 			}
 		}
 		prev_grey = img_grey;
@@ -226,7 +181,7 @@ int main(int argc, char **argv)
 				//line(drawing, center[i], next_points[i], colour, 5);
 				line(drawing, prevPts[i], nextPts[i], Scalar(0.f, 255.f, 0.f), 1, 8);
 				//circle(drawing, prevPts[i], 3, Scalar(0.f, 0.f, 255.f), 1, 8);
-				circle(drawing, nextPts[i], 3, Scalar(0.f, 0.f, 255.f), 1, 8);
+				//circle(drawing, nextPts[i], 3, Scalar(0.f, 0.f, 255.f), 1, 8);
 			}
 		}
 		cout << "Max distance: " << dmax << endl;
@@ -235,11 +190,6 @@ int main(int argc, char **argv)
 		imshow("input OF", img_grey);
 		imshow("drawing OF", drawing);
 #endif
-
-		// Relate feature points to contours
-		{
-			;
-		}
 
 		// Write images
 #if 1
@@ -250,31 +200,18 @@ int main(int argc, char **argv)
 		file.str("");
 		file.clear();
 #endif
+#if 0
 		file << "output/" << setw(6) << setfill('0') << frameNumber << "_mask2.png";
 		imwrite(file.str(), mask2_bak);
 		file.str("");
 		file.clear();
+#endif
 		file << "output/" << setw(6) << setfill('0') << frameNumber << "_drawing.png";
 		imwrite(file.str(), drawing);
 		file.str("");
 		file.clear();
 		file << "output/" << setw(6) << setfill('0') << frameNumber << "_input_of.png";
 		imwrite(file.str(), img_grey);
-#else
-#if defined(IMGDATASET)
-		if (frameNumber == 51) {
-#elif defined(VIDDATASET)
-		if (frameNumber == 126) {
-#elif defined(DATASET)
-		if (frameNumber == 1666) {
-#endif
-			Mat tmp;
-			imwrite("input.png", img);
-			imwrite("mask.png", mask_bak);
-			imwrite("img_mask.png", mask2_bak);
-			imwrite("drawing.png", drawing);
-			//cv::imwrite("bkgmodel.png", img_bkgmodel);
-		}
 #endif
 		frameNumber++;
 
@@ -293,6 +230,7 @@ int main(int argc, char **argv)
 	} while (1);
 #endif
 
+	delete prev_contours;
 	//cvWaitKey(0);
 	cvDestroyAllWindows();
 	return 0;
