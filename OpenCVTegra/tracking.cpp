@@ -12,13 +12,18 @@
 #define DATASET	"dataset/baseline/highway/"
 
 #define SHOW
-#define BLOB_SIZE	12
+#define BLOB_SIZE	8
 
 using namespace std;
 using namespace cv;
 using namespace cv::gpu;
 
 static RNG rng(12345);
+
+struct object_t {
+	vector<Point2f> pts;
+			std::vector<std::vector<cv::Point> > contours;
+};
 
 int main(int argc, char **argv)
 {
@@ -56,6 +61,7 @@ int main(int argc, char **argv)
 
 	GpuMat img_gpu, img_grey_gpu, mask_gpu;
 	Mat img, mask, drawing, prev_grey;
+	vector<vector<Point> > *prev_contours = 0;
 
 	int frameNumber = 1;
 	int64_t past = getTickCount();
@@ -95,7 +101,7 @@ int main(int argc, char **argv)
 			break;
 
 #ifdef SHOW
-		imshow("input", img);
+		//imshow("input", img);
 #endif
 		img_gpu.upload(img);
 		gpu::cvtColor(img_gpu, img_grey_gpu, CV_RGB2GRAY);
@@ -110,7 +116,7 @@ int main(int argc, char **argv)
 		Mat mask_bak = mask.clone();
 
 #ifdef SHOW
-		imshow("mask", mask);
+		//imshow("mask", mask);
 #endif
 
 		// Enhance foreground mask
@@ -138,36 +144,36 @@ int main(int argc, char **argv)
 #endif
 		Mat mask2_bak = mask.clone();
 #ifdef SHOW
-		imshow("mask2", mask);
+		//imshow("mask2", mask);
 #endif
 
 		// Extract contours
 		img.copyTo(drawing);
+		vector<vector<Point> > *contours = new vector<vector<Point> >;
 #if 1
 		{
 			/// Find contours
 			std::vector<cv::Vec4i> hierarchy;
-			std::vector<std::vector<cv::Point> > contours;
 			//std::vector<cv::Vec4i> hierarchy;
-			cv::findContours(mask, contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+			cv::findContours(mask, *contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
 			/// Approximate contours to polygons + get bounding rects and circles
-			vector<vector<Point> > contours_poly(contours.size());
+			vector<vector<Point> > contours_poly(contours->size());
 
 			/// Draw polygonal contour + bonding rects + circles
-			for (size_t i = 0; i < contours.size(); i++) {
+			for (size_t i = 0; i < contours->size(); i++) {
 				// drop smaller blobs
-				if (cv::contourArea(contours[i]) < BLOB_SIZE)
+				if (cv::contourArea((*contours)[i]) < BLOB_SIZE)
 					continue;
 
 				//Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255));
 				Scalar color(255.f, 0.f, 0.f);
-				cv::drawContours(drawing, contours, i, color, 2, 8, hierarchy, 0, Point());
+				cv::drawContours(drawing, *contours, i, color, 2, 8, hierarchy, 0, Point());
 			}
 		}
 #endif
 #ifdef SHOW
-		imshow("drawing", drawing);
+		//imshow("drawing", drawing);
 #endif
 
 		// Optical flow tracking between frames
@@ -176,8 +182,14 @@ int main(int argc, char **argv)
 		img_grey_tmp.copyTo(img_grey, mask2_bak);
 
 		vector<Point2f> prevPts, nextPts;
-		if (!prev_grey.empty()) {
+		if (!prev_grey.empty() && prev_contours != 0) {
+#if 0
 			goodFeaturesToTrack(prev_grey, prevPts, 32, 0.1, 3, mask);
+#else
+			for (vector<Point> &points: *prev_contours)
+				for (Point &point: points)
+					prevPts.push_back(point);
+#endif
 			if (prevPts.size() > 0) {
 				vector<Point2f> pts, bkpPts = prevPts;
 				vector<uchar> ofStatus;
@@ -185,7 +197,7 @@ int main(int argc, char **argv)
 				//TermCriteria termcrit(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 20, 0.03);
 				Size winSize(32, 32);
 				calcOpticalFlowPyrLK(prev_grey, img_grey, bkpPts, pts,
-						ofStatus, err, winSize);
+						ofStatus, err, winSize, 2);
 
 				prevPts.clear();
 				nextPts.clear();
@@ -197,6 +209,10 @@ int main(int argc, char **argv)
 			}
 		}
 		prev_grey = img_grey;
+
+		if (prev_contours)
+			delete prev_contours;
+		prev_contours = contours;
 
 		if (prevPts.size() > 0) {
 			for (size_t i = 0; i < prevPts.size(); i++) {
@@ -211,13 +227,20 @@ int main(int argc, char **argv)
 		imshow("drawing OF", drawing);
 #endif
 
+		// Relate feature points to contours
+		{
+			;
+		}
+
 		// Write images
 #if 1
 		stringstream file;
+#if 0
 		file << "output/" << setw(6) << setfill('0') << frameNumber << "_mask.png";
 		imwrite(file.str(), mask_bak);
 		file.str("");
 		file.clear();
+#endif
 		file << "output/" << setw(6) << setfill('0') << frameNumber << "_mask2.png";
 		imwrite(file.str(), mask2_bak);
 		file.str("");
