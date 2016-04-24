@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <iomanip>
 #include <vector>
 #include <opencv2/opencv.hpp>
@@ -78,7 +79,7 @@ int main(int argc, char **argv)
 
 		// Frame rate control
 #if 1
-		if (frameNumber % 10) {
+		if (frameNumber % 8) {
 			frameNumber++;
 			continue;
 		}
@@ -170,18 +171,19 @@ int main(int argc, char **argv)
 #endif
 
 		// Optical flow tracking between frames
-		Mat img_grey;
-		img_grey_gpu.download(img_grey);
+		Mat img_grey, img_grey_tmp;
+		img_grey_gpu.download(img_grey_tmp);
+		img_grey_tmp.copyTo(img_grey, mask2_bak);
 
 		vector<Point2f> prevPts, nextPts;
 		if (!prev_grey.empty()) {
-			goodFeaturesToTrack(prev_grey, prevPts, 25, 0.3, 10, mask);
+			goodFeaturesToTrack(prev_grey, prevPts, 32, 0.1, 3, mask);
 			if (prevPts.size() > 0) {
 				vector<Point2f> pts, bkpPts = prevPts;
 				vector<uchar> ofStatus;
 				vector<float> err;
 				//TermCriteria termcrit(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 20, 0.03);
-				Size winSize(20, 20);
+				Size winSize(32, 32);
 				calcOpticalFlowPyrLK(prev_grey, img_grey, bkpPts, pts,
 						ofStatus, err, winSize);
 
@@ -199,15 +201,34 @@ int main(int argc, char **argv)
 		if (prevPts.size() > 0) {
 			for (size_t i = 0; i < prevPts.size(); i++) {
 				//line(drawing, center[i], next_points[i], colour, 5);
-				line(drawing, prevPts[i], nextPts[i], Scalar(0.f, 255.f, 0.f), 2, 8);
-				//circle(drawing, next_points[i], 3, colour, -1, 8);
+				line(drawing, prevPts[i], nextPts[i], Scalar(0.f, 255.f, 0.f), 1, 8);
+				//circle(drawing, prevPts[i], 3, Scalar(0.f, 0.f, 255.f), 1, 8);
+				circle(drawing, nextPts[i], 3, Scalar(0.f, 0.f, 255.f), 1, 8);
 			}
 		}
 #ifdef SHOW
+		imshow("input OF", img_grey);
 		imshow("drawing OF", drawing);
 #endif
 
 		// Write images
+#if 1
+		stringstream file;
+		file << "output/" << setw(6) << setfill('0') << frameNumber << "_mask.png";
+		imwrite(file.str(), mask_bak);
+		file.str("");
+		file.clear();
+		file << "output/" << setw(6) << setfill('0') << frameNumber << "_mask2.png";
+		imwrite(file.str(), mask2_bak);
+		file.str("");
+		file.clear();
+		file << "output/" << setw(6) << setfill('0') << frameNumber << "_drawing.png";
+		imwrite(file.str(), drawing);
+		file.str("");
+		file.clear();
+		file << "output/" << setw(6) << setfill('0') << frameNumber << "_input_of.png";
+		imwrite(file.str(), img_grey);
+#else
 #if defined(IMGDATASET)
 		if (frameNumber == 51) {
 #elif defined(VIDDATASET)
@@ -222,6 +243,7 @@ int main(int argc, char **argv)
 			imwrite("drawing.png", drawing);
 			//cv::imwrite("bkgmodel.png", img_bkgmodel);
 		}
+#endif
 		frameNumber++;
 
 		// FPS calculation
