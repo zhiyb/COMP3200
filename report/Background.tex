@@ -1,6 +1,6 @@
 \chapter{Background and literature search}
 
-There are lots of different algorithms and approaches existing in the field of object detection and tracking. Some of those algorithms were investigated in this project in order to identify a set of suitable algorithms that were both accurate and efficient enough to analysis video stream from camera by an embedded platform in real time.
+There are lots of different algorithms and approaches existing in the field of object detection and tracking. Some of those algorithms were investigated in this project in order to identify a set of suitable algorithms that were both accurate and efficient enough to \moda{analyse} video stream from camera by an embedded platform in real time.
 
 Object tracking typically consists of 2 steps. Initially, locations and shapes of each moving object appeared in each frame need to be identified. Subsequently, by analysing and recording the movements of each object in sequential frames, the objects in a video stream can be tracked.
 
@@ -8,7 +8,7 @@ Object tracking typically consists of 2 steps. Initially, locations and shapes o
 
 % {\color{red}Information...}
 
-OpenCV computer vision library \cite{opencv} is a very powerful open-source computer vision library. It contains lots of useful computer vision algorithms, designed for computational efficiency and real-time applications, mostly platform independent and can take the advantage of multi-core and GPU parallel processing on heterogeneous platforms.
+OpenCV computer vision library \cite{opencv} is a very powerful open-source computer vision library. \moda{It contains lots of useful computer vision algorithms, designed for computational efficiency and real-time applications. It is also mostly platform independent, enables easy platform adaptation. Furthermore, it can take the advantage of multi-core and GPU parallel processing on heterogeneous platforms by using a dedicated GPU algorithm module.}
 
 \section{Model based object detection algorithms}
 
@@ -55,7 +55,7 @@ However, if there were other targets with similar colour distribution, the algor
 
 Another important information about an object might be its distinctive shape. By extracting object edges in the scene than apply appropriate shape matching algorithms, an object can be detected based on its shape.
 
-This research \cite{borovicka2003circle} shows the ability to detect circles in a image by applying edge filtering followed by Hough transforms, as shown by \fref{Figure:circles}. \fref{Figure:circle:original} shows the original grey scaled image, then after blurred and Sobel filtered (\fref{Figure:circle:sobel}), clear edges been extracted (\fref{Figure:circle:edge}). Finally, Hough transform been applied, the results merged with the original image are shown by \fref{Figure:circle:circles}.
+This research \cite{borovicka2003circle} shows the ability to detect circles in a image by applying edge filtering followed by Hough \moda{transform}, as shown by \fref{Figure:circles}. \fref{Figure:circle:original} shows the original grey scaled image, then after blurred and Sobel filtered (\fref{Figure:circle:sobel}), clear edges been extracted (\fref{Figure:circle:edge}). Finally, Hough transform been applied, the results merged with the original image are shown by \fref{Figure:circle:circles}.
 
 \begin{figure}[H]
   \centering
@@ -86,7 +86,7 @@ This implementation might be suitable for ball tracking purpose. By combining wi
 
 % {\color{red}Use this: \cite{viola2001rapid}}
 
-Cascade classifier \cite{cascade} \cite{viola2001rapid} is a widely used object detection technique based on machine learning. By concatenating a large number of simple feature detectors (i.e. classifiers) each detecting different simple features based on intensity at different positions as shown by \fref{bg:cc}, complex objects such as human faces can be recognised as shown in \fref{bg:cc:faces}. Furthermore its accuracy can be improved by training the classifier both positively and negatively.
+Cascade classifier \cite{cascade} \cite{viola2001rapid} is a widely used object detection technique based on machine learning. By concatenating a large number of simple feature detectors (i.e. classifiers) each detecting different simple features based on intensity at different positions as shown by \fref{bg:cc}, complex objects such as human faces can be recognised as shown in \moda{\fref{bg:cc:faces}}. Furthermore its accuracy can be improved by training the classifier both positively and negatively.
 
 \begin{figure}[H]
   \centering
@@ -106,14 +106,14 @@ Cascade classifier \cite{cascade} \cite{viola2001rapid} is a widely used object 
   \centering
   \includegraphics[width=0.9\columnwidth]{cc_faces}
   \caption{Cascade classifier recognising human faces (sourced from \cite{borovicka2003circle}).}
-  \label{cc:faces}
+  \label{bg:cc:faces}
 \end{figure}
 
 This algorithm is mostly used for object classification, for example recognising human faces, bodies and different classes of vehicles in images. Like other model based algorithms, multiple classifier definitions are required for detecting different kinds of objects, or even different perspectives of the same object.
 
 % {\color{red}Replace with results from research paper}
 
-\section{Motion based object detection algorithms}
+\section{Motion-based object detection algorithms}
 
 \subsection{Background subtraction}
 \label{motion_bs}
@@ -130,7 +130,7 @@ By studying frames from a video stream then build up a background model image, i
 
 There are several background subtraction algorithms available, the BGSLibrary \cite{bgslibrary} is specifically developed for analysis those algorithms, it offers 37 different background subtraction algorithms implemented using OpenCV, published under GNU GPL v3 license. With the same programming interface for all available algorithms, it allows easy swapping between algorithms.
 
-There is an article \cite{bgs:article} reviewed the algorithms available in the BGSLibrary, ranked 5 algorithms as the best in overall performance score as shown in \tref{Table:bgs}. \fref{bgsreview} shows foreground masks obtained from the top 5 algorithms on sequences from real world videos at the same frame. TP pixels means foreground pixels classified as foreground, TN pixels background pixels classified as background which are correct results, whereas FP pixels means background pixels classified as foreground, and FN pixels means foreground pixels classified as background which are incorrect results. The actual foreground masks generated by the algorithms are TP and FN pixels.
+There is an article \cite{bgs:article} reviewed the algorithms available in the BGSLibrary, ranked 5 algorithms as the best in overall performance score as shown in \tref{Table:bgs}. \fref{bgsreview} shows foreground masks obtained from the top 5 algorithms on sequences from real world videos at the same frame. \moda{TP pixels indicate foreground pixels classified as foreground, and TN pixels indicate background pixels classified as background. Both TP and TN pixels combined togather are the expected results, named ground truth foreground masks. FP pixels indicate background pixels classified as foreground, and FN pixels indicate foreground pixels classified as background. Both FP and FN pixels are incorrect results produced by the algorithm.} The actual foreground masks generated by the algorithms are TP and FN pixels.
 
 \begin{table}[H]
   \centering
@@ -179,7 +179,7 @@ By rendering pixel movements in 3 axes computed from dense optical flow as 3 com
 
 After obtained the foreground object mask by one of the methods described above, it need to be interpreted as distinct objects, so that the geometry properties of each object can then be retrieved.
 
-Connected component analysis, or connected component labelling, is used for detecting regions that are differ in some properties, such as colour or brightness. Such a region is also called a blob, which can be the possible presence region of an independent object if applied to the foreground masks. It is very useful to extract parameters such as shape, size and location of the object afterwards.
+Connected component analysis, or connected component labelling, is used for detecting regions that are \moda{different} in some properties, such as colour or brightness. Such a region is also called a blob, which can be the possible presence region of an independent object if applied to the foreground masks. It is very useful to extract parameters such as shape, size and location of the object afterwards.
 
 There are open source blob detection libraries available, such as the simple blob detector came with OpenCV \cite{opencv:blob}, and the cvBlob library \cite{cvblob}. \fref{cvblob} shows an example of tracking blobs by using the cvBlob library.
 
@@ -200,7 +200,7 @@ Meanshift \cite{fukunaga2013introduction} is an algorithm can be used to track t
 
 % {\color{red}Images}
 
-Continuously Adaptive Meanshift (CAMshift) \cite{bradski1998computer} is an algorithm based on the Meanshift algorithm, that can handle target object size changing and rotation by iterating over the ROI to find the most suitable configuration. This algorithm was also implemented in the OpenCV library \cite{opencv:camshift}, was used by lots of researches for tracking purpose, such as \cite{chu2007object}, \cite{xu2012moving} and \cite{nouar2006improved}. \fref{bg:ms:camshift} shows an example tracking result, compare to the Meanshift algorithm tracking (\fref{bg:ms:meanshift}), it can resize and rotate ROI automatically.
+Continuously Adaptive Meanshift (CAMshift) \cite{bradski1998computer} is an algorithm based on the Meanshift algorithm, that can handle target object size changing and rotation by iterating over the ROI to find the most suitable configuration. \moda{This algorithm was used by lots of researches for tracking purpose, such as \cite{chu2007object}, \cite{xu2012moving} and \cite{nouar2006improved}. It was also implemented in the OpenCV library \cite{opencv:camshift}.}. \fref{bg:ms:camshift} shows an example tracking result, compare to the Meanshift algorithm tracking (\fref{bg:ms:meanshift}), it can resize and rotate ROI automatically.
 
 \begin{figure}[H]
   \centering
@@ -222,7 +222,7 @@ Continuously Adaptive Meanshift (CAMshift) \cite{bradski1998computer} is an algo
 
 %By evaluating pixel movements of feature points inside ROI, the speeds of moving objects projected onto camera sensor can be determined.
 
-Optical flow is another widely used object tracking algorithm that evaluates pixel moving around feature points, by assuming neighbouring pixels will have similar motion as the feature points. Although it can also be used for detecting moving objects by considering regions of points with the same motion as one moving object, however, once the object stopped moving, the optical flow algorithms cannot distinguish the object from background any longer. Therefore it is mainly used for object tracking rather than detection.
+Optical flow is another widely used object tracking algorithm that evaluates pixel moving around feature points, by assuming neighbouring pixels will have similar motion as the feature points. Although it can also be used for detecting moving objects by considering regions of points with the same motion as one moving object, once the object stopped moving, the optical flow algorithms cannot distinguish the object from background any longer. Therefore it is mainly used for object tracking rather than detection.
 
 There are 2 types of optical flow algorithms. One is sparse feature set (Lucas-Kanade method \cite{bouguet2001pyramidal}), it estimates pixel movements around selected feature points. To determine feature points, OpenCV implemented a good features to track \cite{shi1994good} algorithm to find the strongest corners in an image. After that, by moving the feature points according to the movements computed, the object can be tracked across sequence of video frames, as shown by \fref{bg:of:opticalflow_lk}.
 
@@ -248,7 +248,7 @@ Another type is dense optical flow (Gunner Farneback's algorithm \cite{farneback
 
 \section{Object recognition}
 
-Object recognition can also be developed by applying different cascade classifiers as described previously in section \ref{sec:bg:cc} to the ROI of the specific object. This process is very computation intensive and time consuming, therefore should be executed as few as possible to achieve maximum power saving, for example, only execute once when the object first enters the sense or at its maximum visible size to the camera.
+Object recognition can also be developed by applying different cascade classifiers as described previously in section \ref{sec:bg:cc} to the ROI of the specific object. This process is very computation intensive and time consuming, therefore should be executed as few as possible to achieve maximum power saving. \moda{For example, only execute object recognition once the object first enters the sense, or execute to the frame with the maximum visible size of the target object.}
 
 \section{Automatic feedback control}
 

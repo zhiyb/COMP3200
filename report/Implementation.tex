@@ -13,7 +13,7 @@ The Raspberry Pi camera module was connected to the Jetson TK1 board as shown by
 
 The camera driver was implemented based on Linux Video for Linux second version (V4L2) framework. It is a great framework that supports varies kinds of different camera sensor models with the same user space interface, across vast number of different embedded Linux platforms, enables cross platform adaptability with accessibility to low level controls.
 
-The V4L2 interface driver on the Jetson platform is composed by 3 different drivers, as shown by \fref{imp:drivers}. Upon system start up, varies camera hardware connection configurations, such as I2C peripheral address and MIPI-CSI data lane information, will be loaded as platform drivers from a board specific initialisation file. Later when soc\_camera driver loads, it will use those informations to try to active corresponding sub-device control drivers, the connection configurations will also be passed to the control drivers. The control drivers can only controls I2C interfaces to access camera registers, while MIPI data lanes and capture buffers are managed by another independent driver.
+The V4L2 interface driver on the Jetson platform is composed by 3 different drivers, as shown by \fref{imp:drivers}. Upon system \moda{start-up, varies external hardware modules' electrical connection information, that are stored in a board specific initialisation file, will be loaded as platform drivers. For the camera module, I2C peripheral address and MIPI-CSI data lane usage information are required.} Later when soc\_camera driver loads, it will use those informations to try to active corresponding sub-device control drivers, the connection configurations will also be passed to the control drivers. The control drivers can only controls I2C interfaces to access camera registers, while MIPI data lanes and capture buffers are managed by another independent driver.
 
 \begin{figure}[H]
   \centering
@@ -22,7 +22,7 @@ The V4L2 interface driver on the Jetson platform is composed by 3 different driv
   \label{imp:drivers}
 \end{figure}
 
-The soc\_camera top module and capture buffer management module are already provided by NVIDIA, therefore only the platform driver and control driver was required to be implemented.
+The soc\_camera top module and capture buffer management module are already provided by NVIDIA, therefore only the platform driver and control driver \moda{are} required to be implemented.
 
 For adaptive operation, the driver implemented supports different resolution modes available from the camera and precise frame interval alteration. A special control instruction that can change any of the control registers inside the camera sensor was also developed for debugging and controlling purpose.
 
@@ -74,7 +74,7 @@ To convert a Bayer pattern image to RGB space, a $3 \times 3$ square of pixels a
 
 \subsection{Application structure}
 
-An application was developed to receive video stream from the camera or from a testing dataset, then apply OpenCV processing, real-time input and output video preview as well as adaptive camera control. To take the benefits of the heterogeneous architecture more efficiently and overcome issues with buffer updates, the application was implemented using multi-threading approach with inter-thread synchronisation mechanisms.
+An application was developed to receive video stream from \moda{a camera module} or from a testing dataset, then apply OpenCV processing, real-time input and output video preview as well as adaptive camera control. To take the benefits of the heterogeneous architecture more efficiently and overcome issues with buffer updates, the application was implemented using multi-threading approach with inter-thread synchronisation mechanisms.
 
 The main thread in camera mode is responsible for initialisation, camera control, capture buffer synchronisation and management. It allocates several buffers for the camera driver, assign filled buffers to other processing threads and recycle processed buffers back to camera driver. In dataset mode it reads the sequence of frames, skips frames according to frame rate set by adaptive operation.
 
@@ -156,7 +156,7 @@ The OpenCV's cascade classifier implementation \cite{opencv:cc} of face and eye 
 
 Noticeable frame rate drop and latency was experienced (only about 3 fps) when running the cascade classifier implementation on the testing platform, suggests it might not be a suitable algorithm for real-time object tracking application on embedded platforms.
 
-\subsection{Motion based background subtraction}
+\moda{\subsection{Motion based background subtraction}}
 
 4 out of the 5 best algorithms reviewed by the article \cite{bgs:article} that are available in the BGSLibrary as listed in \tref{Table:bgs} were investigated in this project.
 
@@ -209,7 +209,7 @@ The ViBE algorithm from early versions of OpenCV as a non-free add-on module imp
 
 %{\color{red}Background truth, how to tell best masks?}
 
-The better the mask matches the moving object, the better the algorithms is. It can be seen from \fref{Figure:bgs_frame} that MultiLayerBGS gave less holes in the foreground masks, LBAdaptiveSOM had large environment noises, MixtureOfGaussianV1BGS and DPWrenGABGS both produced a large hole in the masks from the second sample dataset. There are some false positions in the foreground mask obtained by ViBE from the first dataset, because the dataset was too short, the ViBE algorithm were not fully learnt the background model yet. However the masks it computed were still precisely close to the input frame, especially from the second dataset.
+The better the \moda{masks match} the moving object, the better the \moda{algorithm} is. It can be seen from \fref{Figure:bgs_frame} that MultiLayerBGS gave less holes in the foreground masks, LBAdaptiveSOM had large environment noises, MixtureOfGaussianV1BGS and DPWrenGABGS both produced a large hole in the masks from the second sample dataset. There are some false positions in the foreground mask obtained by ViBE from the first dataset, because the dataset was too short, \moda{so that} the ViBE algorithm were not fully learnt the background model yet. However the masks it computed were still precisely close to the input frame, especially from the second dataset.
 
 \section{Object tracking algorithms}
 
@@ -249,8 +249,6 @@ Connected component analysis was done as shown by \fref{imp:cca}. The baseline h
 
 \fref{imp:of} shows exemplary sparse set optical flow tracking result between 2 frames. The frames were taken from the baseline highway dataset from CDNET \cite{goyette2012changedetection}, but are 8 frames apart, in order to investigate how well does the optical flow algorithm works when an object travels too fast, moves a long distance between adjacent frames.
 
-The feature points were taken from corner points along the edges of contours extracted by background subtraction algorithm. The input frames were also masked by the foreground masks as shown by \fref{imp:of:prev_input_of} and \fref{imp:of:next_input_of} to reduce possible distractions to the algorithm.
-
 \begin{figure}[htb]
   \centering
   \subfigure [] {
@@ -285,6 +283,24 @@ The feature points were taken from corner points along the edges of contours ext
   }
   \caption{Sparse set optical flow tracking between 2 frames. \subref{imp:of:prev} previous frame, \subref{imp:of:prev_input_of} masked previous frame, \subref{imp:of:prev_drawing} optical tracking result at the previous frame, \subref{imp:of:next} next frame, \subref{imp:of:next_input_of} masked next frame, \subref{imp:of:next_drawing} optical flow tracking result at the next frame. {\color{red}Red circles}: Destinations of feature points generated from previous frame; {\color{dkgreen}Green lines}: Movements of the feature points; {\color{blue}Blue outline}: Object blobs extracted from foreground mask.}
   \label{imp:of}
+\end{figure}
+
+The feature points were taken from corner points along the edges of contours extracted by background subtraction algorithm. The input frames were also masked by the foreground masks as shown by \fref{imp:of:prev_input_of} and \fref{imp:of:next_input_of} to reduce possible distractions to the algorithm.
+
+However, sometimes the optical flow algorithm may gives incorrect tracking results, for example the 2 frames shown in \fref{imp:of:error}. To filtering out those occasions, it is necessary to estimate the maximum possible velocity of objects moving in the scene.
+
+\begin{figure}[htb]
+  \centering
+  \subfigure [] {
+    \includegraphics[width=0.45\columnwidth]{optical/error/000170_drawing}
+    \label{imp:of:error:1}
+  }
+  \subfigure [] {
+    \includegraphics[width=0.45\columnwidth]{optical/error/000171_drawing}
+    \label{imp:of:error:2}
+  }
+  \caption{Situation when optical flow gives unrealistic results for 2 frames from CDNET baseline PETS2006 dataset. {\color{dkgreen}Green lines}: Movements of the feature points; {\color{blue}Blue outline}: Object blobs extracted from foreground mask.}
+  \label{imp:of:error}
 \end{figure}
 
 By relating the destination of movements of feature points from blobs in previous frame to blobs detected in the next frame, the blobs can be tracked between frames. However this is not required for determining the maximum speed of moving objects in the frame needed by adaptive operation, and implementing this would require lots of efforts for statistic computation to filtering out incorrect tracking results, point in polygon testing and blob management, therefore was considered as further work.
