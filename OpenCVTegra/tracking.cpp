@@ -9,7 +9,7 @@
 //#define VIDDATASET	"../bgslibrary/dataset/"
 #define DATASET	"dataset/baseline/highway/"
 
-//#define SHOW
+#define SHOW
 #define BLOB_SIZE	12
 
 using namespace std;
@@ -25,10 +25,7 @@ int main(int argc, char **argv)
 	if (gpu::getCudaEnabledDeviceCount() == 0)
 		return -1;
 	gpu::setDevice(0);
-	GpuMat img, fgmask;
 	VIBE_GPU vibe;
-
-	Mat img_input;
 
 #ifdef VIDDATASET
 	VideoCapture cap;
@@ -55,6 +52,9 @@ int main(int argc, char **argv)
 	clog << "Starts at frame " << start << ", " << total << " frames in total." << endl;
 #endif
 
+	GpuMat img_gpu, img_grey_gpu, mask_gpu;
+	Mat img, mask, drawing, prev_grey;
+
 	int frameNumber = 1;
 	int64_t past = getTickCount();
 	uint64_t count = 0;
@@ -71,6 +71,7 @@ int main(int argc, char **argv)
 		cap >> img_input;
 #endif
 #ifdef DATASET
+		// Frame control
 		if (frameNumber > total)
 			break;
 
@@ -84,82 +85,72 @@ int main(int argc, char **argv)
 		ostringstream imgfile;
 		imgfile << DATASET "/input/in" << setw(6) << setfill('0') << frameNumber << ".jpg";
 		//clog << "Reading file " << imgfile.str() << endl;
-		img_input = imread(imgfile.str().c_str());
+		img = imread(imgfile.str().c_str());
 #endif
-		if (img_input.empty())
+		if (img.empty())
 			break;
 
 #ifdef SHOW
-		imshow("input", img_input);
+		imshow("input", img);
 #endif
-		img.upload(img_input);
-#if 1
-		gpu::GaussianBlur(img, img, Size(3, 3), 1.5);
-#endif
-		vibe(img, fgmask);
+		img_gpu.upload(img);
+		gpu::cvtColor(img_gpu, img_grey_gpu, CV_RGB2GRAY);
 
-		Mat mask;
-		fgmask.download(mask);
+		// ViBE foreground mask
+#if 1
+		gpu::GaussianBlur(img_gpu, img_gpu, Size(3, 3), 1.5);
+#endif
+		vibe(img_gpu, mask_gpu);
+
+		mask_gpu.download(mask);
 		Mat mask_bak = mask.clone();
 
 #ifdef SHOW
 		imshow("mask", mask);
 #endif
 
+		// Enhance foreground mask
 #if 1
-		Mat img_mask(mask.size(), mask.type(), Scalar(0.f));
+		//Mat img_mask(mask.size(), mask.type(), Scalar(0.f));
 		{
 			// find blobs
 			std::vector<std::vector<cv::Point> > v;
 			std::vector<cv::Vec4i> hierarchy;
 			cv::findContours(mask, v, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+			mask = Scalar(0);
 			for (size_t i=0; i < v.size(); ++i)
 			{
 				// drop smaller blobs
 				if (cv::contourArea(v[i]) < BLOB_SIZE)
 					continue;
 				// draw filled blob
-				cv::drawContours(img_mask, v, i, cv::Scalar(255,0,0), CV_FILLED, 8, hierarchy, 0, cv::Point());
+				cv::drawContours(mask, v, i, cv::Scalar(255,0,0), CV_FILLED, 8, hierarchy, 0, cv::Point());
 			}
 
 			// morphological closure
 			cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(BLOB_SIZE, BLOB_SIZE));
-			cv::morphologyEx(img_mask, img_mask, cv::MORPH_CLOSE, element);
+			cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, element);
 		}
-#else
-		Mat img_mask(mask);
 #endif
-		Mat img_mask_bak = img_mask.clone();
+		Mat mask2_bak = mask.clone();
 #ifdef SHOW
-		imshow("img_mask", img_mask);
+		imshow("mask2", mask);
 #endif
 
-		Mat drawing;
-		img_input.copyTo(drawing);
+		// Extract contours
+		img.copyTo(drawing);
 #if 1
 		{
 			/// Find contours
 			std::vector<cv::Vec4i> hierarchy;
 			std::vector<std::vector<cv::Point> > contours;
 			//std::vector<cv::Vec4i> hierarchy;
-			cv::findContours(img_mask, contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+			cv::findContours(mask, contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
 			/// Approximate contours to polygons + get bounding rects and circles
 			vector<vector<Point> > contours_poly(contours.size());
-			//vector<Rect> boundRect(contours.size());
-			//vector<Point2f>center(contours.size());
-			//vector<float>radius(contours.size());
-
-#if 0
-			for (size_t i = 0; i < contours.size(); i++) {
-				cv::approxPolyDP(Mat(contours[i]), contours_poly[i], 3, true);
-				//boundRect[i] = boundingRect(Mat(contours_poly[i]));
-				//minEnclosingCircle((Mat)contours_poly[i], center[i], radius[i]);
-			}
-#endif
 
 			/// Draw polygonal contour + bonding rects + circles
-			//Mat drawing = Mat::zeros(img_mask.size(), CV_8UC3);
 			for (size_t i = 0; i < contours.size(); i++) {
 				// drop smaller blobs
 				if (cv::contourArea(contours[i]) < BLOB_SIZE)
@@ -167,10 +158,7 @@ int main(int argc, char **argv)
 
 				//Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255));
 				Scalar color(255.f, 0.f, 0.f);
-				//cv::drawContours(drawing, contours_poly, i, color, 1, 8, vector<Vec4i>(), 0, Point());
 				cv::drawContours(drawing, contours, i, color, 2, 8, hierarchy, 0, Point());
-				//rectangle(drawing, boundRect[i].tl(), boundRect[i].br(), color, 2, 8, 0);
-				//circle(drawing, center[i], (int)radius[i], color, 2, 8, 0);
 			}
 		}
 #endif
@@ -178,6 +166,20 @@ int main(int argc, char **argv)
 		imshow("drawing", drawing);
 #endif
 
+		// Optical flow tracking
+		{
+			Mat img_grey;
+			img_grey_gpu.download(img_grey);
+
+			;
+
+			prev_grey = img_grey;
+		}
+#ifdef SHOW
+		imshow("drawing OF", drawing);
+#endif
+
+		// Write images at specific frame
 #if defined(IMGDATASET)
 		if (frameNumber == 51) {
 #elif defined(VIDDATASET)
@@ -186,14 +188,15 @@ int main(int argc, char **argv)
 		if (frameNumber == 1666) {
 #endif
 			Mat tmp;
-			imwrite("input.png", img_input);
+			imwrite("input.png", img);
 			imwrite("mask.png", mask_bak);
-			imwrite("img_mask.png", img_mask_bak);
+			imwrite("img_mask.png", mask2_bak);
 			imwrite("drawing.png", drawing);
 			//cv::imwrite("bkgmodel.png", img_bkgmodel);
 		}
 		frameNumber++;
 
+		// FPS calculation
 		int64_t now = getTickCount();
 		if (now - past > 3 * getTickFrequency()) {
 			float fps = (float)count / (now - past) * getTickFrequency();

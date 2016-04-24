@@ -1,7 +1,7 @@
 #SRC	= main.cpp
 #SRC	= edges.cpp
 #SRC	= circles.cpp
-SRC	= bgs_vibe.cpp
+SRC	= tracking.cpp
 
 #SRC	+= capture.cpp yavta.c
 
