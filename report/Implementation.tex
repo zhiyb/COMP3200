@@ -4,26 +4,42 @@
 
 \modc{\subsection{Hardware connection}}
 
-The Raspberry Pi camera module was connected to the Jetson TK1 board as shown by \fref{imp:schematic}. A 74HCT245 bus transceiver chip was used as a buffer for voltage level conversion, since GPIOs on the Jetson board are using $1.8V$ voltage level while the Raspberry Pi module is working at $3.3V$ voltage level. \modc{The camera needs 2 discrete interfaces for control and communicate, I2C and MIPI-CSI. I2C interface is a relatively low speed interface with multi master and multi slave addressing support, is used to control and configure the camera. MIPI-CSI interface is a high speed data transmission interface designed for high resolution cameras, by having multiple differential data lanes to multiple maximum transmission speed. The camera uses 2 data lanes to transmit frame data and synchronise.}
+The Raspberry Pi camera module was connected to the Jetson TK1 board as shown \mdc{in} \fref{imp:schematic}\modc{, \fref{imp:connection}}. A 74HCT245 bus transceiver chip was used as a buffer for voltage level conversion, since GPIOs on the Jetson board are using $1.8V$ voltage level while the Raspberry Pi module is working at $3.3V$ voltage level. \modc{The camera needs 2 discrete interfaces for control and communicate, I2C and MIPI-CSI. I2C interface is a relatively low speed interface with multi master and multi slave addressing support, is used to control and configure the camera. MIPI-CSI interface is a high speed data transmission interface designed for high resolution cameras, by having multiple differential data lanes to multiple maximum transmission speed. The camera uses 2 data lanes to transmit frame data and synchronise.}
 
-\begin{figure}[H]
+\begin{figure}[htb]
   \centering
   \includegraphics[width=0.7\columnwidth]{schematic}
   \caption{Schematic of Jetson board connect to a Raspberry Pi camera module.}
   \label{imp:schematic}
 \end{figure}
 
-{\color{red}Camera clock etc.}
+\modc{\begin{figure}[htb]
+  \centering
+  \includegraphics[width=0.7\columnwidth]{connection}
+  \caption{Photo of the connection between the camera model and the Jetson board.}
+  \label{imp:connection}
+\end{figure}
 
-\modc{The GPIO on the camera module is controlling a LED mounted on the module, and it is controllable through the camera driver. Therefore by controlling the GPIO, it not only can gives indications about camera activity, but also is very useful for debugging and triggering external power analyser.}
+The camera module is using an on-board $25 MHz$ oscillator, then multiplied to $48 MHz$ pixel clock by Phase Locked Loop (PLL) inside the camera sensor. Changing of frame interval was done by adding dummy blank lines after frame data.
 
-{\color{red}Camera waveform.}
+The GPIO on the camera module is controlling \mdc{an} LED mounted on the module, and it is controllable through the camera driver. Therefore by controlling the GPIO, it not only \mdc{can give} indications about camera activity, but also is very useful for debugging and triggering external power analyser.
 
-\modc{\subsection{Driver development}}
+%{\color{red}Camera waveform.}
 
-The camera driver was implemented based on Linux Video for Linux second version (V4L2) framework. It is a great framework that supports varies kinds of different camera sensor models with the same user space interface, across vast number of different embedded Linux platforms, enables cross platform adaptability with accessibility to low level controls.
+\fref{imp:cam:osc} shows a detailed waveform captured using an oscilloscope during camera frame rate configuration. The camera resolution was configured to a higher resolution mode for 2 frames, then changed back. Frame data, line data, synchronisation packet and I2C transmissions are clearly marked on the waveform.
 
-The V4L2 interface driver on the Jetson platform is composed by 3 different drivers, as shown by \fref{imp:drivers}. Upon system \moda{start-up, varies external hardware modules' electrical connection information, that are stored in a board specific initialisation file, will be loaded as platform drivers. For the camera module, I2C peripheral address and MIPI-CSI data lane usage information are required.} Later when soc\_camera driver loads, it will use those informations to try to active corresponding sub-device control drivers, the connection configurations will also be passed to the control drivers. The control drivers can only controls I2C interfaces to access camera registers, while MIPI data lanes and capture buffers are managed by another independent driver.
+\begin{figure}[htb]
+  \centering
+  \includegraphics[width=\columnwidth]{cam_osc}
+  \caption{Waveform capture of configuring camera module.}
+  \label{imp:cam:osc}
+\end{figure}
+
+\subsection{Driver development}}
+
+The camera driver was implemented based on Linux Video for Linux second version (V4L2) framework. It is a great framework that supports \mdc{various} kinds of different camera sensor models with the same user space interface, across vast number of different embedded Linux platforms, \mdc{enabling} cross platform adaptability with accessibility to low level controls.
+
+The V4L2 interface driver on the Jetson platform is composed by 3 different drivers, as shown \mdc{in} \fref{imp:drivers}. Upon system \moda{start-up, \mdc{various} external hardware modules' electrical connection information, that are stored in a board specific initialisation file, will be loaded as platform drivers. For the camera module, I2C peripheral address and MIPI-CSI data lane usage information are required.} Later when soc\_camera driver loads, it will use those informations to try to active corresponding sub-device control drivers, the connection configurations will also be passed to the control drivers. The control drivers can only \mdc{control} I2C interfaces to access camera registers, while MIPI data lanes and capture buffers are managed by another independent driver.
 
 \begin{figure}[H]
   \centering
@@ -34,7 +50,7 @@ The V4L2 interface driver on the Jetson platform is composed by 3 different driv
 
 The soc\_camera top module and capture buffer management module are already provided by NVIDIA, therefore only the platform driver and control driver \moda{are} required to be implemented.
 
-For adaptive operation, the driver implemented supports different resolution modes available from the camera and precise frame interval alteration. A special control instruction that can change any of the control registers inside the camera sensor was also developed for debugging and controlling purpose.
+For adaptive operation, the driver implemented supports different resolution modes available from the camera and precise frame interval alteration. A special control instruction that can change any of the control registers inside the camera sensor was also developed for debugging and controlling \mdc{purposes}.
 
 \section{Application}
 
@@ -84,16 +100,16 @@ To convert a Bayer pattern image to RGB space, a $3 \times 3$ square of pixels a
 
 An application was developed to receive video stream from \moda{a camera module} or from a testing dataset, then apply OpenCV processing, real-time input and output video preview as well as adaptive camera control. To take the benefits of the heterogeneous architecture more efficiently and overcome issues with buffer updates, the application was implemented using multi-threading approach with inter-thread synchronisation mechanisms.
 
-The main thread in camera mode is responsible for initialisation, camera control, capture buffer synchronisation and management. It allocates several buffers for the camera driver, assign filled buffers to other processing threads and recycle processed buffers back to camera driver. In dataset mode it reads the sequence of frames, skips frames according to frame rate set by adaptive operation.
+The main thread in camera mode is responsible for initialisation, camera control, capture buffer synchronisation and management. It allocates several buffers for the camera driver, \mdc{assigns} filled buffers to other processing threads and \mdc{recycles} processed buffers back to camera driver. In dataset mode it reads the sequence of frames, skips frames according to frame rate set by adaptive operation. \modc{The timestamps of video buffers were also recorded, so that exact time between 2 frames can be calculated for adaptive operation.}
 
-After obtained a frame from video stream, an OpenGL live video preview thread was then used to show the frame to a monitor, independent from the processing algorithm. This thread can be independently stalled so that it would not consume any processing power when analysing performances and power consumptions of algorithms. In camera mode, it will convert the frames received from Bayer pattern format to RGB colour space for rendering onto the screen. This process is done by GPU through OpenGL shaders, therefore is extremely fast, around 200 FPS for $640 \times 480$ resolution if synchronisation with main thread is disabled.
+After \mdc{obtaining} a frame from video stream, an OpenGL live video preview thread was then used to show the frame to a monitor, independent from the processing algorithm. This thread can be independently stalled so that it would not consume any processing power when analysing performances and power consumptions of algorithms. In camera mode, it will convert the frames received from Bayer pattern format to RGB colour space for rendering onto the screen. This process is done by GPU through OpenGL shaders, therefore is extremely fast, around 200 FPS for $640 \times 480$ resolution if synchronisation with main thread is disabled.
 
-The OpenCV algorithms runs on both CPU and GPU, and OpenCV has a constrain that to view the processed images, the application needs to call a user interface update function that is time consuming but not power intensive, therefore 2 threads was used in a pipeline style in order to speed up the processing. The buffers received from main thread will first go through the processing thread, then pass to the second thread for display on the monitor. The display thread can also be stalled for power saving.
+The OpenCV algorithms \mdc{run} on both CPU and GPU, and OpenCV has a \mdc{constraint} that \mdc{is} to view the processed images, the application needs to call a user interface update function that is time consuming but not power intensive, therefore 2 threads \mdc{were} used in a pipeline style in order to speed up the processing. The buffers received from main thread will first go through the processing thread, then pass to the second thread for display on the monitor. The display thread can also be stalled for power saving.
 
 %The OpenCV algorithms runs on both CPU and GPU, therefore to take the full advantages of heterogeneous architecture and run the algorithms as fast as possible, the OpenCV processing runs in a pipelined style through 3 threads. Every buffer received will go through first CPU processing thread, then transferred to GPU processing thread, finally .
-%and OpenCV has a constrain that to view the processed image results, the application, so that two OpenCV processing threads was created so that.
+%and OpenCV has a constraint that to view the processed image results, the application, so that two OpenCV processing threads was created so that.
 
-Finally, an input handing thread for debugging and controlling through command line interface. Most of time this thread is block waiting for user input, therefore won't consume considerable CPU time.
+Finally, \mdc{there is} an input \mdc{handling} thread for debugging and controlling through command line interface. Most of \mdc{the} time this thread \modc{waits} for user input, therefore won't consume considerable CPU time.
 
 \section{Object detection algorithms}
 
@@ -101,7 +117,7 @@ Finally, an input handing thread for debugging and controlling through command l
 
 A simple implementation of colour filtering object detection algorithm \cite{MOTBOC.git} was investigated, as shown in \fref{imp:MOTBOC}.
 
-However, this implementation is very limited, it can only detects objects with single colour, cannot distinguish the objects from similar background colour, relies heavily on manually adjusted colour threshold values, very sensitive to the variations of colour from different cameras and environment lighting conditions, therefore not very adaptable. A complex environment may also results into undesired detections, as shown in \fref{imp:MOTBOC_F}. Background objects that has similar colour to the desired red objects were detected as foreground red objects, and some target objects were not been identified and misclassified because of slight change in lighting condition, the objects' colour seen by the camera were no longer inside the colour filters' ranges.
+However, this implementation is very limited, it can only \mdc{detect} objects with single colour, \modc{and it} cannot distinguish the objects from similar background colour, relies heavily on manually adjusted colour threshold values, very sensitive to the variations of colour from different cameras and environment lighting conditions, therefore not very adaptable. A complex environment may also \mdc{result in} undesired detections, as shown in \fref{imp:MOTBOC_F}. Background objects that \mdc{have a} similar colour to the desired red objects were detected as foreground red objects, and some target objects were not been identified and misclassified because of \mdc{a} slight change in \mdc{the} lighting condition, the objects' colour seen by the camera \mdc{was} no longer inside the colour filters' ranges.
 
 \begin{figure}[H]
   \centering
@@ -119,7 +135,7 @@ However, this implementation is very limited, it can only detects objects with s
 
 \subsection{Circle detection}
 
-OpenCV's implementation of Hough Circle Transform for circle detection was investigated, as shown by \fref{Figure:circles}.
+OpenCV's implementation of Hough Circle Transform for circle detection was investigated, as shown \mdc{in} \fref{Figure:circles}.
 
 %\fref{Figure:circles} shows the image processed by circle detection, based on OpenCV's implementation of Hough Circle Transform \cite{opencv:hough_circle}.
 
@@ -145,15 +161,15 @@ OpenCV's implementation of Hough Circle Transform for circle detection was inves
   \label{Figure:circles}
 \end{figure}
 
-The frame captured from camera (\fref{Figure:edges:original}), was first converted to grey scale then blurred, as shown in \fref{Figure:edges:blur}. Blur or smoothing is necessarily to reduce false object edges that might be detected. Afterwards the object edges in the image was extracted as in \fref{Figure:edges:edges}. Finally \fref{Figure:edges:circles} shows the circles detected by the algorithm.
+The frame captured from camera (\fref{Figure:edges:original}), was first converted to grey scale then blurred, as shown in \fref{Figure:edges:blur}. Blur or smoothing is necessarily to reduce false object edges that might be detected. Afterwards the object edges in the image \mdc{were} extracted as in \fref{Figure:edges:edges}. Finally \fref{Figure:edges:circles} shows the circles detected by the algorithm.
 
-However, this algorithm is still very limited and inaccurate, as shown by \fref{Figure:circles}, the coin at the top right corner had not been detected, because it appeared to be an ellipse instead of a prefect circle because of camera perspective. Furthermore, in order to detect multiple geometric shapes, different algorithms would be required for each of the different shapes.
+However, this algorithm is still very limited and inaccurate, as shown \mdc{in} \fref{Figure:circles}, the coin at the top right corner had not been detected, because it appeared to be an ellipse instead of a prefect circle because of \mdc{the} camera perspective. Furthermore, in order to detect multiple geometric shapes, different algorithms would be required for each of the different shapes.
 
 \subsection{Cascade Classifier}
 
 % as shown in \fref{Figure:cc_face}
 
-The OpenCV's cascade classifier implementation \cite{opencv:cc} of face and eye detection was investigated as shown in \fref{Figure:cc_face}.
+The OpenCV's cascade classifier implementation \cite{opencv:cc} of face and eye detection \mdc{were} investigated as shown in \fref{Figure:cc_face}.
 
 \begin{figure}[H]
   \centering
@@ -162,7 +178,7 @@ The OpenCV's cascade classifier implementation \cite{opencv:cc} of face and eye 
   \label{Figure:cc_face}
 \end{figure}
 
-Noticeable frame rate drop and latency was experienced (only about 3 fps) when running the cascade classifier implementation on the testing platform, suggests it might not be a suitable algorithm for real-time object tracking application on embedded platforms.
+Noticeable frame rate drop \modc{(only about 3 fps) was} experienced when running the cascade classifier implementation on the testing platform, \mdc{suggesting that} it might not be a suitable algorithm for real-time object tracking application on embedded platforms.
 
 \moda{\subsection{Motion based background subtraction}}
 
@@ -217,7 +233,7 @@ The ViBE algorithm from early versions of OpenCV as a non-free add-on module imp
 
 %{\color{red}Background truth, how to tell best masks?}
 
-The better the \moda{masks match} the moving object, the better the \moda{algorithm} is. It can be seen from \fref{Figure:bgs_frame} that MultiLayerBGS gave less holes in the foreground masks, LBAdaptiveSOM had large environment noises, MixtureOfGaussianV1BGS and DPWrenGABGS both produced a large hole in the masks from the second sample dataset. There are some false positions in the foreground mask obtained by ViBE from the first dataset, because the dataset was too short, \moda{so that} the ViBE algorithm were not fully learnt the background model yet. However the masks it computed were still precisely close to the input frame, especially from the second dataset.
+The better the \moda{masks match} the moving object, the better the \moda{algorithm} is. It can be seen from \fref{Figure:bgs_frame} that MultiLayerBGS gave \mdc{fewer} holes in the foreground masks, LBAdaptiveSOM had large environment noises, MixtureOfGaussianV1BGS and DPWrenGABGS both produced a large hole in the masks from the second sample dataset. There are some false positions in the foreground mask obtained by ViBE from the first dataset, because the dataset was too short, \moda{so that} the ViBE algorithm \mdc{was} not fully learnt the background model yet. However the masks it computed were still close to the input frame, especially from the second dataset.
 
 \section{Object tracking algorithms}
 
@@ -227,7 +243,7 @@ The better the \moda{masks match} the moving object, the better the \moda{algori
 
 \subsection{Connected component analysis}
 
-Connected component analysis was done as shown by \fref{imp:cca}. The baseline highway sample dataset from CDNET \cite{goyette2012changedetection} was used, it has 1700 frames, 30 frames per second and the resolution is $320 \times 240$. The ViBE background subtraction algorithm was used to extract foreground masks as shown by \fref{imp:cca:mask}, for connected component analysis algorithm to evaluate. OpenCV's find contours functions was used to extract the blobs. However, in order for it to work properly, the masks need to be cleaned up first. This was done by applying a find contours function first, filtering out small contours that are mostly likely noises, then redraw the contours. That may still leaves unclosed holes, therefore a Morphology transformation \cite{serra1982image} was applied afterwards to close those holes. \fref{imp:cca:mask2} shows the mask been cleaned up. Finally, apply the find contours function to the enhanced foreground mask, results in numbers of contours, outlined on the input frame shown by \fref{imp:cca:drawing}.
+Connected component analysis was done as shown \mdc{in} \fref{imp:cca}. The baseline highway sample dataset from CDNET \cite{goyette2012changedetection} was used, it has 1700 frames, 30 frames per second and the resolution is $320 \times 240$. The ViBE background subtraction algorithm was used to extract foreground masks as shown \mdc{in} \fref{imp:cca:mask}, for connected component analysis algorithm to evaluate. OpenCV's find contours \modc{function was} used to extract the blobs. However, in order for it to work properly, the masks need to be cleaned up first. This was done by applying a find contours function first, filtering out small contours that are mostly likely noises, then redraw the contours. That may still \mdc{leave} unclosed holes, therefore a Morphology transformation \cite{serra1982image} was applied afterwards to close those holes. \fref{imp:cca:mask2} shows the mask been cleaned up. Finally, apply the find contours function to the enhanced foreground mask, results in numbers of contours, outlined on the input frame shown \mdc{in} \fref{imp:cca:drawing}.
 
 \begin{figure}[htb]
   \centering
@@ -255,7 +271,7 @@ Connected component analysis was done as shown by \fref{imp:cca}. The baseline h
 
 \subsection{Optical flow}
 
-\fref{imp:of} shows exemplary sparse set optical flow tracking result between 2 frames. The frames were taken from the baseline highway dataset from CDNET \cite{goyette2012changedetection}, but are 8 frames apart, in order to investigate how well does the optical flow algorithm works when an object travels too fast, moves a long distance between adjacent frames.
+\fref{imp:of} shows exemplary sparse set optical flow tracking result between 2 frames. The frames were taken from the baseline highway dataset from CDNET \cite{goyette2012changedetection}, but are 8 frames apart, in order to investigate how well the optical flow algorithm works when \modc{objects travel} too fast, \modc{move} a long distance between adjacent frames.
 
 \begin{figure}[htb]
   \centering
@@ -293,9 +309,9 @@ Connected component analysis was done as shown by \fref{imp:cca}. The baseline h
   \label{imp:of}
 \end{figure}
 
-The feature points were taken from corner points along the edges of contours extracted by background subtraction algorithm. The input frames were also masked by the foreground masks as shown by \fref{imp:of:prev_input_of} and \fref{imp:of:next_input_of} to reduce possible distractions to the algorithm.
+The feature points were taken from corner points along the edges of contours extracted by background subtraction algorithm. The input frames were also masked by the foreground masks as shown \mdc{in} \fref{imp:of:prev_input_of} and \fref{imp:of:next_input_of} to reduce possible distractions to the algorithm.
 
-However, sometimes the optical flow algorithm may gives incorrect tracking results, for example the 2 frames shown in \fref{imp:of:error}. To filtering out those occasions, it is necessary to estimate the maximum possible velocity of objects moving in the scene.
+However, sometimes the optical flow algorithm may \mdc{give} incorrect tracking results, for example the 2 frames shown in \fref{imp:of:error}. To filtering out those occasions, it is necessary to estimate the maximum possible velocity of objects moving in the scene.
 
 \begin{figure}[htb]
   \centering
@@ -313,7 +329,7 @@ However, sometimes the optical flow algorithm may gives incorrect tracking resul
 
 By relating the destination of movements of feature points from blobs in previous frame to blobs detected in the next frame, the blobs can be tracked between frames. However this is not required for \modb{obtaining} the \modb{highest} speed of \modb{objects moving between frames, which is the input the adaptive operation depends on. Implementing} this would \modb{also} require lots of efforts for statistic computation to filtering out incorrect tracking results, point in polygon testing \modb{algorithm} and blob management, therefore was considered as further work.
 
-\section{Adaptive \modb{energy} saving operation}
+\section{\modc{Adaptive \modb{energy} saving operation}}
 
 Adaptive energy saving operation was done by varying input video stream frame rate based on object tracking results, a feedback loop as previous illustrated in the system block diagram (\fref{block}).
 
@@ -343,7 +359,7 @@ The basic one is the maximum possible moving speed of any objects and parts of o
 
 Typical object sizes, distances between objects and active area masks are used to optimise foreground mask filtering, so that noises and movements caused by other unrelated objects and noises can be filtered out as much as possible. They are irrelevant to the optical flow tracking algorithm, because the algorithm is tracking feature points around blobs not shapes of blobs.
 
-The minimum frame rate is determined as shown by \eref{f_min}, so that movement of any object will not overtake the tracking window, therefore most likely keep been tracked.
+The minimum frame rate is determined as shown by \eref{f_min}, so that movement of any object will not overtake the tracking window, therefore most likely keep been tracked. It is also limited by minimum response rate required in an application.
 
 \begin{equation}
 	f_{min} = \frac{\text{Maximum object speed}}{\text{Optical flow optimum tracking length}}
@@ -352,8 +368,14 @@ The minimum frame rate is determined as shown by \eref{f_min}, so that movement 
 
 The maximum frame rate is only limited by algorithm computation speed and hardware limitations.
 
-\subsection{Frame rate prediction}
+\subsection{Frame rate adaptation}
 
-Having calculated the maximum movement distance between feature points between continuous frames, .
+Having calculated the maximum movement distance of feature points between adjacent frames, the frame rate is then calculated as \eref{f_rate}. The frame interval will be adjusted according to this by the main thread.
 
+\begin{equation}
+	f = \frac{\text{Maximum movement distance}}{\text{Optical flow optimum tracking length} \times \text{Time between frames}}
+	\label{f_rate}
+\end{equation}
+
+{\color{red}Implementation? BOOM}
 %\section{Video stream dataset}

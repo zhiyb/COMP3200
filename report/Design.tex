@@ -13,7 +13,7 @@
 	\item Control the camera frame rate while the camera is actively capturing video stream.
 	\item Implement object tracking algorithm on the target platform for video surveillance application.
 	\item Optimise the algorithm so that it runs around $30$ FPS on the platform.
-	\item Achieve $50\%$ power saving on some typical real world video surveillance dataset through adaptive operation.
+	\item Achieve $50\%$ power \mdc{reduction} on some typical real world video surveillance dataset through adaptive operation.
 	\item Maintaining $80\%$ successful object tracking rate with the adaptive operation.
 	\item Build a camera and algorithm power consumption model.
 	\item Use the model to estimate power saving achieved through adaptive operation.
@@ -38,11 +38,18 @@
 
 %ARM or x86?
 
-An embedded development board was used in this project, it enables easy power consumption analysis and is more likely the situation where power efficiency will be required rather than a desktop or server environment.
+An embedded development board was used in this project, it enables easy power consumption analysis and \mdc{it} is more likely the situation where power efficiency will be required rather than a desktop or server environment.
 
-The most broadly used and powerful embedded processor architecture is ARM. It has relatively high performance grade available, extensively hardware and software support including embedded Linux operating system with reasonable power consumption and varies power saving modes, therefore was chosen to be used in this project.
+The most broadly used and powerful embedded processor architecture is ARM. It has relatively high performance grade available, extensively hardware and software support including embedded Linux operating system with reasonable power consumption and \modc{various} power saving modes, therefore was chosen to be used in this project.
 
-Specifically, the Jetson Tegra K1 embedded development platform \cite{NVIDIA:tk1} featuring a 2.32GHz quad-core ARM CPU and a CUDA enabled Tegra GPU, introduced by NVIDIA, was used in this project. It has a rich set of peripheral interfaces exported enables low-level control and interfacing with a MIPI-CSI high resolution camera module and is powerful enough to develop programs and execute complex computer vision algorithms on board. The heterogeneous architecture with CUDA enabled GPU can also be fully utilised by the GPU module in the specifically optimised OpenCV library, makes it particularly suitable for computer vision tasks.
+Specifically, the Jetson Tegra K1 embedded development platform \cite{NVIDIA:tk1} (\fref{des:board}) featuring a 2.32GHz quad-core ARM CPU and a CUDA enabled Tegra GPU, introduced by NVIDIA, was used in this project. It has a rich set of peripheral interfaces exported \mdc{enabling} low-level control and interfacing with a MIPI-CSI high resolution camera module and is powerful enough to develop programs and execute complex computer vision algorithms on board. The heterogeneous architecture with CUDA enabled GPU can also be fully utilised by the GPU module in the specifically optimised OpenCV library, \mdc{making} it particularly suitable for computer vision tasks.
+
+\begin{figure}[htb]
+  \centering
+  \includegraphics[width=0.7\columnwidth]{board}
+  \caption{The Jetson Tegra K1 embedded development board.}
+  \label{des:board}
+\end{figure}
 
 There are other heterogeneous architecture embedded platforms with ARM CPU cores and ARM GPUs available, but ARM GPUs are currently not supported by OpenCV's GPU module, and the CPUs alone are probably not powerful enough for complex computer vision tasks.
 
@@ -54,9 +61,17 @@ A general x86 architecture computer running Microsoft Windows operation system w
 
 % Specific camera module to be used was not determined yet at the time this progress report was written, but it would be a high resolution camera module from OmniVision \cite{ovt} that can be easily interfaced and directly controlled with the peripheral interfaces on the Jetson TK1 platform. A Linux kernel module driver probably need to be developed in order to control the camera parameters and operations from program running in user space.
 
-The Raspberry Pi camera module was used in this project, it features a 5 mega pixels OV5647 camera sensor manufactured by OmniVision Technologies Inc. It is relatively more expensive than buying the camera sensor only, but the raspberry pi camera module is more broadly available in small quantities and can be easily connected to the board without the need to design a dedicated adapter PCB. It uses the MIPI-CSI interface which the board has native support for, the complete data sheet is also available around the Internet and it features subsampling, frame rate control, auto exposure and white balance functions etc. which are essential to adaptive operation.
+The Raspberry Pi camera module (\fref{des:cam}) was used in this project, it features a 5 mega pixels OV5647 camera sensor manufactured by OmniVision Technologies Inc. It is relatively more expensive than buying \mdc{a camera sensor alone}, but the raspberry pi camera module is more broadly available in small quantities and can be easily connected to the board without the need to design a dedicated adapter PCB. It uses the MIPI-CSI interface which the board has native support for, the complete data sheet is also available around the Internet and it features subsampling, frame rate control, auto exposure and white balance functions etc. which are essential to adaptive operation.
 
-The only difficulty is that the camera sensor can only output frames in raw Bayer pattern format \cite{bayer1976color}, as shown by \fref{bayer}. A typical colourful computer image consists of 3 primary colour channels per pixel, which are red, green and blue, i.e. RGB colour space. However, because of physical and manufacture constrains, most of camera sensors including the camera used in this project have only one intensity sensor per pixel with a specific colour filter, arranged in Bayer pattern format, therefore image processing algorithm \moda{needs} to be applied to convert or approximate the raw data to produce full colour images. Some of the camera sensors have \moda{built-in image processors} that applies the algorithm automatically, but the Raspberry Pi camera sensor used in this project doesn't have that functionality, therefore the algorithm \moda{needs} to be implemented by the application. But since the format can be efficiently converted using the GPU cores and CUDA, that is not a significant issue.
+\begin{figure}[htb]
+  \centering
+  \includegraphics[width=0.3\columnwidth]{rpi_camera_front}
+  \includegraphics[width=0.3\columnwidth]{rpi_camera_back}
+  \caption{The Raspberry Pi camera module.}
+  \label{des:cam}
+\end{figure}
+
+The only difficulty is that the camera sensor can only output frames in raw Bayer pattern format \cite{bayer1976color}, as shown \mdc{in} \fref{bayer}. A typical colourful computer image consists of 3 primary colour channels per pixel, which are red, green and blue, i.e. RGB colour space. However, because of physical and manufacture \mdc{constraints}, most of camera sensors including the camera used in this project have only one intensity sensor per pixel with a specific colour filter, arranged in Bayer pattern format, therefore image processing algorithm \moda{needs} to be applied to convert or approximate the raw data to produce full colour images. Some of the camera sensors have \moda{built-in image processors} that \mdc{apply} the algorithm automatically, but the Raspberry Pi camera sensor used in this project doesn't have that functionality, therefore the algorithm \moda{needs} to be implemented by the application. But since the format can be efficiently converted using the GPU cores and CUDA, that is not a significant issue.
 
 \begin{figure}[H]
   \centering
@@ -69,19 +84,19 @@ The only difficulty is that the camera sensor can only output frames in raw Baye
 
 \subsection{Operating system}
 
-Ubuntu Linux distribution version 14.04.1 LTS was used on the platform, installed directly from the file system image provided by NVIDIA. Linux is great for this project because it is fully configurable, so that operating system overheads can be reduced to minimum by disabling unused services, even the graphical desktop environment. Also most Linux operations can be done through just command line interface, possibly via a SSH shell access, therefore programming and controlling the platform can be done anywhere with internet connection, which is very convenient.
+Ubuntu Linux distribution version 14.04.1 LTS was used on the platform \mdc{and} installed directly from the file system image provided by NVIDIA. Linux is great for this project because it is fully configurable, operating system overheads can be reduced to minimum by disabling unused services, even the graphical desktop environment. Also most Linux operations can be done through just command line interface, possibly via a SSH shell access, therefore programming and controlling the platform can be done anywhere with internet connection, which is very convenient.
 
-The open-source GNU/Linux system also provides familiar and widely used tool sets, kernel driver development is well-documented, cross platform computer vision libraries especially OpenCV is also available, and has enormous community support.
+The open-source GNU/Linux system also provides familiar and widely used tool sets, kernel driver development is well-documented, cross platform computer vision libraries especially OpenCV \mdc{are} also available \mdc{with} enormous community support.
 
 \subsection{Computer vision API}
 
-OpenCV \cite{opencv} was used to implement the algorithms, due to its cross platform adaptability, easy to use and has large number of efficient algorithms ready for use and analysis. Furthermore, the OpenCV library for Jetson platform provided by NVIDIA had been further optimised, provides 2x-5x speed up compare to regular OpenCV \cite{NVIDIA:perf}. The OpenCV GPU module based on NVIDIA CUDA was also available, utilises the heterogeneous architecture and provides 5x-20x speed up. These optimisations can reduce computation time dramatically, thus further reduces the power consumption.
+OpenCV \cite{opencv} was used to implement the algorithms, due to its cross platform adaptability, \modc{easy development} and large number of efficient algorithms ready for use and analysis. Furthermore, the OpenCV library for Jetson platform provided by NVIDIA had been further optimised, \mdc{providing} 2x-5x speed up \mdc{compared} to regular OpenCV \cite{NVIDIA:perf}. The OpenCV GPU module based on NVIDIA CUDA was also available\mdc{. It} utilises the heterogeneous architecture and provides 5x-20x speed up. These optimisations can reduce computation time dramatically, thus further \mdc{reduce} the power consumption.
 
 \subsection{Testing dataset}
 
-Using a consistent video stream input and a camera power consumption model instead of replaying the same scene in front of the camera is preferred, because reproducing the exactly same video stream from replaying scene is impossible, factors such as camera and object instability, inaccurate synchronisation, hardware and software restrains will also take effect.
+Using a consistent video stream input and a camera power consumption model instead of replaying the same scene in front of the camera is preferred, because reproducing the exactly same video stream from replaying scene is impossible\mdc{. Factors} such as camera and object instability, inaccurate synchronisation, hardware and software restrains will also take effect.
 
-The video database from \cite{goyette2012changedetection} was used for testing the algorithms and analysing the performance and accuracy of adaptive operation. The database was rigorous and comprehensive, involves lots of carefully chosen video streams from different real life scenarios, very useful for evaluate object tracking algorithms in different situation.
+The \modc{CDNET video database} \cite{goyette2012changedetection} was used for testing the algorithms and analysing the performance and accuracy of adaptive operation. The database was rigorous and comprehensive\mdc{. It} involves lots of carefully chosen video streams from different real life scenarios, \mdc{and is} very useful for evaluate object tracking algorithms in different \mdc{situations}.
 
 \section{Algorithms}
 

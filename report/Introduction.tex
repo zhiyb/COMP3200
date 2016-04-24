@@ -14,9 +14,9 @@
 % Less computation, can achieve less storage \& bandwidth.
 \fi
 
-Computer vision algorithms are heavily used in lots of different areas, such as robotic and video surveillance systems. Currently most of them \moda{require} the use of a dedicated processing server, either a remote computer or a cloud server on the internet, therefore \moda{wasting a lot of energy and data bandwidth in the process of video stream transmission, storage and processing. They also suffers high response latency.} With rapid growth of integrated circuit technologies, processing power was just enough to realise computation intensive computer vision algorithms on a small form factor mobile platform, which can be very useful for those systems, since it can dramatically reduce the energy wasting by applying computer vision algorithms directly on board, enables low latency reactions and adaptive energy saving operation, \moda{also provides considerable flexibility for physical deployment.}
+Computer vision algorithms are heavily used in lots of different areas, such as robotic and video surveillance systems. Currently most of them \moda{require} the use of a dedicated processing server, either a remote computer or a cloud server on the internet, therefore \moda{wasting a lot of energy and data bandwidth in the process of video stream transmission, storage and processing. They also \mdc{suffer} high response latency.} With rapid growth of integrated circuit technologies, processing power was just enough to realise \mdc{computational} intensive computer vision algorithms on a small form factor mobile platform, which can be very useful for those systems, since it can \mdc{drastically} reduce the energy \mdc{wasted} by applying computer vision algorithms directly on board, \mdc{enable} low latency reactions and adaptive energy saving operation, \moda{also \mdc{provide} considerable flexibility for physical deployment.}
 
-Moreover, with the availability of integrated GPU cores in modern embedded and system-on-chip (SoC) platforms, on board video processing can be a lot more faster and powerful by utilising the heterogeneous hardware architecture, as most of video processing algorithms can take the advantages of parallel computing.
+Moreover, with the availability of integrated GPU cores in modern embedded and system-on-chip (SoC) platforms, on board video processing can be a lot faster and \mdc{more} powerful by utilising the heterogeneous hardware architecture, as most of video processing algorithms can take the advantages of parallel computing.
 
 %However, mobile devices generally have limited processing power, memory, storage and energy, but video processing algorithms involves lots of computations, hence could be the most power intensive and time consuming part in such application.
 
@@ -29,7 +29,7 @@ e.g. Video conference.
 
 This technique can be applied to vision based robotic and interactive embedded applications, where power consumption and response latency are essential. By enabling adaptive frame rate and resolution control, the processing power, hence the total power consumption, can be dramatically reduced by not having to continuously process video stream at high frame rate and resolution when it is not necessary. In addition, \moda{low latency responsiveness on such system can also be achieved, by executing computer vision algorithms on board instead of remote compute server.}
 
-This technique may also be applied \moda{in} bandwidth efficient video streaming applications, for example video surveillance and conferencing. In such applications, the bandwidth and storage requirements can be significantly reduced when no noticeable object in the scene was moving, since high frame rate video streaming and storing are not necessary and can even be paused.
+This technique may also be applied \moda{in} bandwidth efficient video streaming applications, \mdc{such as} video surveillance and conferencing. In such applications, the bandwidth and storage requirements can be significantly reduced when no noticeable object in the scene was moving, since high frame rate video streaming and storing are not necessary and can even be paused.
 
 \section{Aims}
 
@@ -45,9 +45,9 @@ The aim of this project was to investigate ways to reduce overall power consumpt
 The targets to be achieved are:
 
 \begin{itemize}
-	\item Choose an embedded development platform that is capable for running computer vision algorithms in real time and has direct access to camera control interface.
-	\item Interface a suitable camera module with sensible specifications for use with the platform.
-	\item Identity and realise real time object detection and tracking algorithms that are suitable for use in such platform.
+	\item Choose an embedded development platform that is capable \mdc{of} running computer vision algorithms in real time and has direct access to camera control interface.
+	\item Interface a suitable camera module with sensible specifications for use \mdc{on} the platform.
+	\item \modc{Classify} and realise real time object detection and tracking algorithms that are suitable for such platform.
 	\item Realise adaptive camera frame rate and resolution control, based on the speeds and sizes of objects tracked, hence reducing computations, consequently reducing total power consumption.
 	\item Analyse and optimise the performance of the operation metric, by applying the algorithms with and without adaptive operation on same sets of sample video streams, comparing the percentage of objects been tracked and overall power consumption reduction achieved.
 \end{itemize}
