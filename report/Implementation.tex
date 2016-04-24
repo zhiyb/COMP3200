@@ -247,6 +247,10 @@ Connected component analysis was done as shown by \fref{imp:cca}. The baseline h
 
 \subsection{Optical flow}
 
+\fref{imp:of} shows exemplary sparse set optical flow tracking result between 2 frames. The frames were taken from the baseline highway dataset from CDNET \cite{goyette2012changedetection}, but are 8 frames apart, in order to investigate how well does the optical flow algorithm works when an object travels too fast, moves a long distance between adjacent frames.
+
+The feature points were taken from corner points along the edges of contours extracted by background subtraction algorithm. The input frames were also masked by the foreground masks as shown by \fref{imp:of:prev_input_of} and \fref{imp:of:next_input_of} to reduce possible distractions to the algorithm.
+
 \begin{figure}[htb]
   \centering
   \subfigure [] {
@@ -279,10 +283,12 @@ Connected component analysis was done as shown by \fref{imp:cca}. The baseline h
     \includegraphics[width=0.3\columnwidth]{optical/between/next_drawing}
     \label{imp:of:next_drawing}
   }
-  \caption{Optical flow tracking between 2 adjacent frames. \subref{imp:of:prev} previous frame, \subref{imp:of:prev_input_of} masked previous frame, \subref{imp:of:prev_drawing} optical tracking result at the previous frame, \subref{imp:of:next} next frame, \subref{imp:of:next_input_of} masked next frame, \subref{imp:of:next_drawing} optical flow tracking result at the next frame. {\color{red}Red circles}: Destinations of feature points generated from previous frame; {\color{dkgreen}Green lines}: Movements of the feature points; {\color{blue}Blue outline}: Object blobs extracted from foreground mask.}
-  \label{imp:cca}
+  \caption{Sparse set optical flow tracking between 2 frames. \subref{imp:of:prev} previous frame, \subref{imp:of:prev_input_of} masked previous frame, \subref{imp:of:prev_drawing} optical tracking result at the previous frame, \subref{imp:of:next} next frame, \subref{imp:of:next_input_of} masked next frame, \subref{imp:of:next_drawing} optical flow tracking result at the next frame. {\color{red}Red circles}: Destinations of feature points generated from previous frame; {\color{dkgreen}Green lines}: Movements of the feature points; {\color{blue}Blue outline}: Object blobs extracted from foreground mask.}
+  \label{imp:of}
 \end{figure}
+
+By relating the destination of movements of feature points from blobs in previous frame to blobs detected in the next frame, the blobs can be tracked between frames. However this is not required for determining the maximum speed of moving objects in the frame needed by adaptive operation, and implementing this would require lots of efforts for statistic computation to filtering out incorrect tracking results, point in polygon testing and blob management, therefore was considered as further work.
 
 \section{Adaptive power saving operation}
 
-\section{Video stream dataset}
+%\section{Video stream dataset}
