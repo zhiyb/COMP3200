@@ -1,8 +1,10 @@
 \chapter{Implementation}
 
-\section{Camera module and driver development}
+\section{Camera module}
 
-The Raspberry Pi camera module was connected to the Jetson TK1 board as shown by \fref{imp:schematic}. A 74HCT245 bus transceiver chip was used as a buffer for voltage level conversion, since GPIOs on the Jetson board are using $1.8V$ voltage level while the Raspberry Pi module is working at $3.3V$ voltage level.
+\modc{\subsection{Hardware connection}}
+
+The Raspberry Pi camera module was connected to the Jetson TK1 board as shown by \fref{imp:schematic}. A 74HCT245 bus transceiver chip was used as a buffer for voltage level conversion, since GPIOs on the Jetson board are using $1.8V$ voltage level while the Raspberry Pi module is working at $3.3V$ voltage level. \modc{The camera needs 2 discrete interfaces for control and communicate, I2C and MIPI-CSI. I2C interface is a relatively low speed interface with multi master and multi slave addressing support, is used to control and configure the camera. MIPI-CSI interface is a high speed data transmission interface designed for high resolution cameras, by having multiple differential data lanes to multiple maximum transmission speed. The camera uses 2 data lanes to transmit frame data and synchronise.}
 
 \begin{figure}[H]
   \centering
@@ -10,6 +12,14 @@ The Raspberry Pi camera module was connected to the Jetson TK1 board as shown by
   \caption{Schematic of Jetson board connect to a Raspberry Pi camera module.}
   \label{imp:schematic}
 \end{figure}
+
+{\color{red}Camera clock etc.}
+
+\modc{The GPIO on the camera module is controlling a LED mounted on the module, and it is controllable through the camera driver. Therefore by controlling the GPIO, it not only can gives indications about camera activity, but also is very useful for debugging and triggering external power analyser.}
+
+{\color{red}Camera waveform.}
+
+\modc{\subsection{Driver development}}
 
 The camera driver was implemented based on Linux Video for Linux second version (V4L2) framework. It is a great framework that supports varies kinds of different camera sensor models with the same user space interface, across vast number of different embedded Linux platforms, enables cross platform adaptability with accessibility to low level controls.
 
@@ -25,8 +35,6 @@ The V4L2 interface driver on the Jetson platform is composed by 3 different driv
 The soc\_camera top module and capture buffer management module are already provided by NVIDIA, therefore only the platform driver and control driver \moda{are} required to be implemented.
 
 For adaptive operation, the driver implemented supports different resolution modes available from the camera and precise frame interval alteration. A special control instruction that can change any of the control registers inside the camera sensor was also developed for debugging and controlling purpose.
-
-The GPIO on the camera module is controlling a LED mounted on the module, and it is controllable through the driver. Therefore by controlling the GPIO, it not only can gives indications about camera activity, but also is very useful for debugging and triggering external power analyser.
 
 \section{Application}
 
@@ -303,8 +311,49 @@ However, sometimes the optical flow algorithm may gives incorrect tracking resul
   \label{imp:of:error}
 \end{figure}
 
-By relating the destination of movements of feature points from blobs in previous frame to blobs detected in the next frame, the blobs can be tracked between frames. However this is not required for determining the maximum speed of moving objects in the frame needed by adaptive operation, and implementing this would require lots of efforts for statistic computation to filtering out incorrect tracking results, point in polygon testing and blob management, therefore was considered as further work.
+By relating the destination of movements of feature points from blobs in previous frame to blobs detected in the next frame, the blobs can be tracked between frames. However this is not required for \modb{obtaining} the \modb{highest} speed of \modb{objects moving between frames, which is the input the adaptive operation depends on. Implementing} this would \modb{also} require lots of efforts for statistic computation to filtering out incorrect tracking results, point in polygon testing \modb{algorithm} and blob management, therefore was considered as further work.
 
-\section{Adaptive power saving operation}
+\section{Adaptive \modb{energy} saving operation}
+
+Adaptive energy saving operation was done by varying input video stream frame rate based on object tracking results, a feedback loop as previous illustrated in the system block diagram (\fref{block}).
+
+\subsection{Parameter metrics}
+
+For it to work optimistically in a particular scenario, a few parameter metrics are required, listed in \tref{imp:ada:par}.
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{cc}
+  \toprule
+  \textbf{Parameter metric} \\
+  \midrule
+  Maximum possible object moving speed. \\
+  Typical object sizes. \\
+  Typical distances between objects. \\
+  Active area masks. \\
+  Minimum acceptable frame rate. \\
+  Maximum possible frame rate. \\
+  \bottomrule
+  \end{tabular}
+  \caption{Parameter metrics required for adaptive energy saving operation}
+  \label{imp:ada:par}
+\end{table}
+
+The basic one is the maximum possible moving speed of any objects and parts of objects in the scenario. It is used to determine all other parameters.
+
+Typical object sizes, distances between objects and active area masks are used to optimise foreground mask filtering, so that noises and movements caused by other unrelated objects and noises can be filtered out as much as possible. They are irrelevant to the optical flow tracking algorithm, because the algorithm is tracking feature points around blobs not shapes of blobs.
+
+The minimum frame rate is determined as shown by \eref{f_min}, so that movement of any object will not overtake the tracking window, therefore most likely keep been tracked.
+
+\begin{equation}
+	f_{min} = \frac{\text{Maximum object speed}}{\text{Optical flow optimum tracking length}}
+	\label{f_min}
+\end{equation}
+
+The maximum frame rate is only limited by algorithm computation speed and hardware limitations.
+
+\subsection{Frame rate prediction}
+
+Having calculated the maximum movement distance between feature points between continuous frames, .
 
 %\section{Video stream dataset}
