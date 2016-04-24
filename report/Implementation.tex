@@ -109,8 +109,6 @@ However, this implementation is very limited, it can only detects objects with s
   \label{imp:MOTBOC}
 \end{figure}
 
-%{\color{red}Descriptions about the failure}
-
 \subsection{Circle detection}
 
 OpenCV's implementation of Hough Circle Transform for circle detection was investigated, as shown by \fref{Figure:circles}.
@@ -158,7 +156,7 @@ The OpenCV's cascade classifier implementation \cite{opencv:cc} of face and eye 
 
 Noticeable frame rate drop and latency was experienced (only about 3 fps) when running the cascade classifier implementation on the testing platform, suggests it might not be a suitable algorithm for real-time object tracking application on embedded platforms.
 
-\subsection{Motion based}
+\subsection{Motion based background subtraction}
 
 4 out of the 5 best algorithms reviewed by the article \cite{bgs:article} that are available in the BGSLibrary as listed in \tref{Table:bgs} were investigated in this project.
 
@@ -245,9 +243,39 @@ Connected component analysis was done as shown by \fref{imp:cca}. The baseline h
   \label{imp:cca}
 \end{figure}
 
-\subsection{Continuously Adaptive Meanshift}
+%\subsection{Continuously Adaptive Meanshift}
 
 \subsection{Optical flow}
+
+\begin{figure}[htb]
+  \centering
+  \subfigure [] {
+    \includegraphics[width=0.3\columnwidth]{optical/between/prev}
+    \label{imp:of:prev}
+  }
+  \subfigure [] {
+    \includegraphics[width=0.3\columnwidth]{optical/between/prev_mask2}
+    \label{imp:of:prev_mask}
+  }
+  \subfigure [] {
+    \includegraphics[width=0.3\columnwidth]{optical/between/prev_input_of}
+    \label{imp:of:prev_input_of}
+  }
+  \subfigure [] {
+    \includegraphics[width=0.3\columnwidth]{optical/between/next}
+    \label{imp:of:next}
+  }
+  \subfigure [] {
+    \includegraphics[width=0.3\columnwidth]{optical/between/next_input_of}
+    \label{imp:of:next_input_of}
+  }
+  \subfigure [] {
+    \includegraphics[width=0.3\columnwidth]{optical/between/next_drawing}
+    \label{imp:of:next_drawing}
+  }
+  \caption{Optical flow tracking between 2 frames. \subref{imp:of:prev} previous frame, \subref{imp:of:prev_mask} foreground mask at the previous frame, \subref{imp:of:prev_input_of} masked previous frame, \subref{imp:of:next} next frame, \subref{imp:of:next_input_of} masked next frame, \subref{imp:of:next_drawing} optical flow tracking result.}
+  \label{imp:cca}
+\end{figure}
 
 \section{Adaptive power saving operation}
 
