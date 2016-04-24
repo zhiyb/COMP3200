@@ -7,10 +7,14 @@
 #include <opencv2/gpu/gpu.hpp>
 #include "opencv2/nonfree/gpu.hpp"
 
-#define DATASET	"dataset/baseline/office/"
+#define DATASET	"dataset/baseline/highway/"
 
 #define SHOW
 #define BLOB_SIZE	8
+#define OF_SIZE		32
+#define MOVE_MAX	26
+#define FPS_MAX		30
+#define FPS_MIN		2
 
 using namespace std;
 using namespace cv;
@@ -79,7 +83,7 @@ int main(int argc, char **argv)
 		gpu::cvtColor(img_gpu, img_grey_gpu, CV_RGB2GRAY);
 
 		// ViBE foreground mask
-#if 1
+#if 0
 		gpu::GaussianBlur(img_gpu, img_gpu, Size(3, 3), 1.5);
 #endif
 		vibe(img_gpu, mask_gpu);
@@ -167,7 +171,8 @@ int main(int argc, char **argv)
 			delete prev_contours;
 		prev_contours = contours;
 
-		Point2f dmax;
+		double dismax = 0.f;
+		Point2f dismaxp;
 		if (prevPts.size() > 0) {
 			Mat d;
 			absdiff(Mat(prevPts), Mat(nextPts), d);
@@ -176,16 +181,19 @@ int main(int argc, char **argv)
 			for (size_t i = 0; i < prevPts.size(); i++) {
 				if (!ofStatus[i])
 					continue;
-				dmax.x = max(dmax.x, diff[i].x);
-				dmax.y = max(dmax.y, diff[i].y);
+				double dis = norm(diff[i]);
+				if (dis > dismax) {
+					dismax = dis;
+					dismaxp = diff[i];
+				}
 				//line(drawing, center[i], next_points[i], colour, 5);
 				line(drawing, prevPts[i], nextPts[i], Scalar(0.f, 255.f, 0.f), 1, 8);
 				//circle(drawing, prevPts[i], 3, Scalar(0.f, 0.f, 255.f), 1, 8);
 				//circle(drawing, nextPts[i], 3, Scalar(0.f, 0.f, 255.f), 1, 8);
 			}
 		}
-		cout << "Max distance: " << dmax << endl;
-		ofmaxd << dmax << endl;
+		cout << "Max distance: " << dismax << endl;
+		ofmaxd << frameNumber << "," << dismaxp.x << "," << dismaxp.y << "," << dismax << endl;
 #ifdef SHOW
 		imshow("input OF", img_grey);
 		imshow("drawing OF", drawing);
