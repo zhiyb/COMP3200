@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <vector>
 #include <opencv2/opencv.hpp>
 #include <opencv2/gpu/gpu.hpp>
 #include "opencv2/nonfree/gpu.hpp"
@@ -76,9 +77,11 @@ int main(int argc, char **argv)
 			break;
 
 		// Frame rate control
-#if 0
-		if (frameNumber % 3)
-			 continue;
+#if 1
+		if (frameNumber % 10) {
+			frameNumber++;
+			continue;
+		}
 #endif
 
 		// Read frame image
@@ -166,20 +169,45 @@ int main(int argc, char **argv)
 		imshow("drawing", drawing);
 #endif
 
-		// Optical flow tracking
-		{
-			Mat img_grey;
-			img_grey_gpu.download(img_grey);
+		// Optical flow tracking between frames
+		Mat img_grey;
+		img_grey_gpu.download(img_grey);
 
-			;
+		vector<Point2f> prevPts, nextPts;
+		if (!prev_grey.empty()) {
+			goodFeaturesToTrack(prev_grey, prevPts, 25, 0.3, 10, mask);
+			if (prevPts.size() > 0) {
+				vector<Point2f> pts, bkpPts = prevPts;
+				vector<uchar> ofStatus;
+				vector<float> err;
+				//TermCriteria termcrit(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 20, 0.03);
+				Size winSize(20, 20);
+				calcOpticalFlowPyrLK(prev_grey, img_grey, bkpPts, pts,
+						ofStatus, err, winSize);
 
-			prev_grey = img_grey;
+				prevPts.clear();
+				nextPts.clear();
+				for (unsigned int i = 0; i < pts.size(); i++)
+					if (ofStatus[i]) {
+						prevPts.push_back(bkpPts[i]);
+						nextPts.push_back(pts[i]);
+					}
+			}
+		}
+		prev_grey = img_grey;
+
+		if (prevPts.size() > 0) {
+			for (size_t i = 0; i < prevPts.size(); i++) {
+				//line(drawing, center[i], next_points[i], colour, 5);
+				line(drawing, prevPts[i], nextPts[i], Scalar(0.f, 255.f, 0.f), 2, 8);
+				//circle(drawing, next_points[i], 3, colour, -1, 8);
+			}
 		}
 #ifdef SHOW
 		imshow("drawing OF", drawing);
 #endif
 
-		// Write images at specific frame
+		// Write images
 #if defined(IMGDATASET)
 		if (frameNumber == 51) {
 #elif defined(VIDDATASET)
