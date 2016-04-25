@@ -117,7 +117,7 @@ Finally, \mdc{there is} an input \mdc{handling} thread for debugging and control
 
 A simple implementation of colour filtering object detection algorithm \cite{MOTBOC.git} was investigated, as shown in \fref{imp:MOTBOC}.
 
-However, this implementation is very limited, it can only \mdc{detect} objects with single colour, \modc{and it} cannot distinguish the objects from similar background colour, relies heavily on manually adjusted colour threshold values, very sensitive to the variations of colour from different cameras and environment lighting conditions, therefore not very adaptable. A complex environment may also \mdc{result in} undesired detections, as shown in \fref{imp:MOTBOC_F}. Background objects that \mdc{have a} similar colour to the desired red objects were detected as foreground red objects, and some target objects were not been identified and misclassified because of \mdc{a} slight change in \mdc{the} lighting condition, the objects' colour seen by the camera \mdc{was} no longer inside the colour filters' ranges.
+\todo{However, this implementation is very limited, it can only \mdc{detect} objects with single colour, \modc{and it} cannot distinguish the objects from similar background colour, relies heavily on manually adjusted colour threshold values, very sensitive to the variations of colour from different cameras and environment lighting conditions, therefore not very adaptable.} A complex environment may also \mdc{result in} undesired detections, as shown in \fref{imp:MOTBOC_F}. Background objects that \mdc{have a} similar colour to the desired red objects were detected as foreground red objects, and some target objects were not been identified and misclassified because of \mdc{a} slight change in \mdc{the} lighting condition, the objects' colour seen by the camera \mdc{was} no longer inside the colour filters' ranges.
 
 \begin{figure}[H]
   \centering
@@ -407,6 +407,8 @@ Having calculated the maximum movement distance of feature points between adjace
   \caption{Frames evaluated from the highway dataset after applied adaptive operation.}
   \label{imp:ada:ex}
 \end{figure*}
+
+\todo{Update the frames}
 
 The changes of frame rate through the entire dataset are shown in \fref{imp:ada:ex:all}. Most of the time frame rate is below 10 FPS, results in only 274 out of 1700 frames in the dataset been evaluated, saves a lot of computation.
 
