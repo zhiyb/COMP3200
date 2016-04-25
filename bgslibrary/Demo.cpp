@@ -69,7 +69,7 @@ along with BGSLibrary.  If not, see <http://www.gnu.org/licenses/>.
 #include "package_bgs/pl/SuBSENSE.h"
 #include "package_bgs/pl/LOBSTER.h"
 
-#define DATASET	"D:\\dataset\\dataset\\baseline\\highway"
+//#define DATASET	"D:\\dataset\\dataset\\baseline\\highway"
 
 using namespace std;
 using namespace cv;
@@ -146,7 +146,7 @@ int main(int argc, char **argv)
 #else
 	//CvCapture *capture = 0;
 	VideoCapture cap;
-	int resize_factor = 100;
+	float resize_factor = 1.f;
 
 	if(argc > 1)
 	{
@@ -158,7 +158,7 @@ int main(int argc, char **argv)
 	{
 		//capture = cvCaptureFromCAM(0);
 		cap.open(0);
-		//resize_factor = 50; // set size = 50% of original image
+		resize_factor = 0.5f; // set size = 50% of original image
 	}
 
 	//if(!capture)
@@ -258,8 +258,8 @@ int main(int argc, char **argv)
 	cv::Mat img_bkgmodel;
 	//std::vector<std::vector<cv::Point> > previous_contours;
 	int frame_count = 0;
-	for (int ds = 1; ds <= total; ds++) {
 #ifdef DATASET
+	for (int ds = 1; ds <= total; ds++) {
 		// Frame rate control
 		if (ds % 3)
 			 continue;
@@ -274,11 +274,17 @@ int main(int argc, char **argv)
 			return 1;
 		}
 #else
-		//frame_aux = cvQueryFrame(capture);
-		//if(!frame_aux) break;
-
-		//cvResize(frame_aux, frame);
+	for (;;) {
+#if 0
+		frame_aux = cvQueryFrame(capture);
+		if(!frame_aux) break;
+		cvResize(frame_aux, frame);
+#else
 		cap >> frame;
+		if(frame.empty())
+			break;
+		cv::resize(frame, frame, cv::Size(), resize_factor, resize_factor);
+#endif
 #endif
 
 		Mat img_input(frame);
@@ -292,14 +298,16 @@ int main(int argc, char **argv)
 		}
 
 		bgs->process(img_input, img_mask, img_bkgmodel); // by default, it shows automatically the foreground mask image
+		imshow("mask 1", img_mask);
 
 		//if(!img_mask.empty())
 		//  cv::imshow("Foreground", img_mask);
 		//  do something
-		medianBlur(img_mask, img_mask, 5);
+		//medianBlur(img_mask, img_mask, 5);
 
 #if 1
 #define BLOB_SIZE	10
+#if 1
 		// find blobs
 		std::vector<std::vector<cv::Point> > v;
 		std::vector<cv::Vec4i> hierarchy;
@@ -314,11 +322,12 @@ int main(int argc, char **argv)
 			cv::drawContours(img_mask, v, i, cv::Scalar(255,0,0), CV_FILLED, 8, hierarchy, 0, cv::Point() );
 		}
 		imshow("Mask", img_mask);
+#endif
 
 		// morphological closure
 		cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(BLOB_SIZE, BLOB_SIZE));
 		cv::morphologyEx(img_mask, img_mask, cv::MORPH_CLOSE, element);
-		imshow("Mask", img_mask);
+		imshow("mask 2", img_mask);
 #endif
 
 #if 0
@@ -337,7 +346,7 @@ int main(int argc, char **argv)
 		}
 		imshow("Mask", img_mask);
 #endif
-#if 0		// http://docs.opencv.org/2.4.10/doc/tutorials/imgproc/shapedescriptors/bounding_rects_circles/bounding_rects_circles.html
+#if 1		// http://docs.opencv.org/2.4.10/doc/tutorials/imgproc/shapedescriptors/bounding_rects_circles/bounding_rects_circles.html
 
 		/// Find contours
 		std::vector<std::vector<cv::Point> > contours;
@@ -346,15 +355,17 @@ int main(int argc, char **argv)
 
 		/// Approximate contours to polygons + get bounding rects and circles
 		vector<vector<Point> > contours_poly(contours.size());
-		vector<Rect> boundRect(contours.size());
+		//vector<Rect> boundRect(contours.size());
 		//vector<Point2f>center(contours.size());
 		//vector<float>radius(contours.size());
 
+#if 0
 		for (size_t i = 0; i < contours.size(); i++) {
 			approxPolyDP(Mat(contours[i]), contours_poly[i], 3, true);
-			boundRect[i] = boundingRect(Mat(contours_poly[i]));
+			//boundRect[i] = boundingRect(Mat(contours_poly[i]));
 			//minEnclosingCircle((Mat)contours_poly[i], center[i], radius[i]);
 		}
+#endif
 
 		/// Draw polygonal contour + bonding rects + circles
 		//Mat drawing = Mat::zeros(img_mask.size(), CV_8UC3);
