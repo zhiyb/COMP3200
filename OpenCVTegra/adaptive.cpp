@@ -7,16 +7,20 @@
 #include <opencv2/gpu/gpu.hpp>
 #include "opencv2/nonfree/gpu.hpp"
 
-#define DATASET	"dataset/baseline/highway/"
+#define DATASET	"dataset/baseline/office/"
 
 #define SHOW
-#define ADAPTIVE
+//#define HALFSIZE
+//#define ADAPTIVE
 #define BLOB_SIZE	8
 #define OF_SIZE		32
-#define MOVE_MAX	26
 #define FPS_DATASET	30
+#ifdef ADAPTIVE
+//#define MOVE_MAX	26	// baseline/highway
+#define MOVE_MAX	movemax	// read from file
 #define FPS_MAX		(FPS_DATASET)
 #define FPS_MIN		2	// MOVE_MAX / OF_SIZE
+#endif
 
 #ifdef ADAPTIVE
 #define OUTPUT	"adaptive"
@@ -40,6 +44,7 @@ int main(int argc, char **argv)
 	VIBE_GPU vibe;
 
 	int start, total;
+	float movemax;
 
 	{
 		clog << "Using dataset " DATASET << endl;
@@ -47,7 +52,7 @@ int main(int argc, char **argv)
 		string str;
 		getline(ifs, str);
 		istringstream iss(str);
-		iss >> start >> total;
+		iss >> start >> total >> movemax;
 		ifs.close();
 	}
 
@@ -69,7 +74,9 @@ int main(int argc, char **argv)
 		// Frame control
 		if (frameNumber > total)
 			break;
+#ifdef ADAPTIVE
 		float itvl = 1.f / fps_actual;
+#endif
 
 		// Read frame image
 		ostringstream imgfile;
@@ -82,7 +89,9 @@ int main(int argc, char **argv)
 #ifdef SHOW
 		//imshow("input", img);
 #endif
-		//resize(img, img, Size(), 0.5f, 0.5f);
+#ifdef HALFSIZE
+		resize(img, img, Size(), 0.5f, 0.5f);
+#endif
 		img_gpu.upload(img);
 		//gpu::resize(img_gpu, img_gpu, Size(), 0.5f, 0.5f);
 		gpu::cvtColor(img_gpu, img_grey_gpu, CV_RGB2GRAY);
@@ -187,8 +196,10 @@ int main(int argc, char **argv)
 				if (!ofStatus[i])
 					continue;
 				double dis = norm(diff[i]);
+#ifdef ADAPTIVE
 				if (dis > fps * MOVE_MAX)
 					continue;
+#endif
 				if (dis > dismax) {
 					dismax = dis;
 					dismaxp = diff[i];
@@ -200,10 +211,12 @@ int main(int argc, char **argv)
 			}
 		}
 
+#ifdef ADAPTIVE
 		// Adaptive FPS calculation
 		fps = dismax / itvl / (float)OF_SIZE;
 		fps = max(fps, (float)FPS_MIN);
 		fps = min(fps, (float)FPS_MAX);
+#endif
 
 #ifdef SHOW
 		imshow("input OF", img_grey);
@@ -235,10 +248,15 @@ int main(int argc, char **argv)
 #endif
 
 		// Print messages
+#ifdef ADAPTIVE
 		cout << "Max distance: " << dismax << ",\tfps: " << fps;
 		cout << ",\tactual fps: " << fps_actual << ",\tincrement: " << inc << endl;
 		oflog << frameNumber << "," << dismaxp.x << "," << dismaxp.y << "," << dismax;
 		oflog << fps << "," << fps_actual << "," << inc << endl;
+#else
+		cout << "Max distance: " << dismax << endl;
+		oflog << frameNumber << "," << dismaxp.x << "," << dismaxp.y << "," << dismax << endl;
+#endif
 		frameNumber += inc;
 
 		// FPS calculation
