@@ -204,9 +204,9 @@ Noticeable frame rate drop \modc{(only about 3 FPS) was} experienced when runnin
 \end{table}
 %\fi
 
-%The missing Pixel-Based Adaptive Segmenter (PBAS) algorithm , because the algorithm is based on patented ViBE algorithm, therefore removed from the BGSLibrary to avoid patent issue. However,
+%The missing Pixel-Based Adaptive Segmenter (PBAS) algorithm , because the algorithm is based on patented ViBe algorithm, therefore removed from the BGSLibrary to avoid patent issue. However,
 
-The ViBE algorithm from early versions of OpenCV as a non-free add-on module implemented with CUDA runs on GPU, which is also the base of the missing PBAS algotihm, was also investigated.
+The ViBe algorithm from early versions of OpenCV as a non-free add-on module implemented with CUDA runs on GPU, which is also the base of the missing PBAS algotihm, was also investigated.
 
 \fref{Figure:bgs_frame} shows the foreground masks obtained at the same frame index by those 5 algorithms. The dataset used are 2 sample highway surveillance video datasets came with the BGSLibrary \cite{bgslibrary}.
 
@@ -217,7 +217,7 @@ The ViBE algorithm from early versions of OpenCV as a non-free add-on module imp
   \includegraphics[width=0.3\columnwidth]{bgs_frame/MixtureOfGaussianV1BGS/mask}
   \includegraphics[width=0.3\columnwidth]{bgs_frame/LBAdaptiveSOM/mask}
   \includegraphics[width=0.3\columnwidth]{bgs_frame/DPWrenGABGS/mask}
-  \includegraphics[width=0.3\columnwidth]{bgs_frame/ViBE/mask}
+  \includegraphics[width=0.3\columnwidth]{bgs_frame/ViBe/mask}
 
 
   \includegraphics[width=0.3\columnwidth]{bgs_video/input}
@@ -225,15 +225,15 @@ The ViBE algorithm from early versions of OpenCV as a non-free add-on module imp
   \includegraphics[width=0.3\columnwidth]{bgs_video/MixtureOfGaussianV1BGS/mask}
   \includegraphics[width=0.3\columnwidth]{bgs_video/LBAdaptiveSOM/mask}
   \includegraphics[width=0.3\columnwidth]{bgs_video/DPWrenGABGS/mask}
-  \includegraphics[width=0.3\columnwidth]{bgs_video/ViBE/mask}
+  \includegraphics[width=0.3\columnwidth]{bgs_video/ViBe/mask}
 
-  \caption{Exemplary frames of results obtained from background subtraction algorithms. Every 2 rows: Input frame, foreground mask obtained by MultiLayerBGS, MixtureOfGaussianV1BGS, LBAdaptiveSOM, DPWrenGABGS and ViBE algorithms.}
+  \caption{Exemplary frames of results obtained from background subtraction algorithms. Every 2 rows: Input frame, foreground mask obtained by MultiLayerBGS, MixtureOfGaussianV1BGS, LBAdaptiveSOM, DPWrenGABGS and ViBe algorithms.}
   \label{Figure:bgs_frame}
 \end{figure}
 
 %{\color{red}Background truth, how to tell best masks?}
 
-The better the \moda{masks match} the moving object, the better the \moda{algorithm} is. It can be seen from \fref{Figure:bgs_frame} that MultiLayerBGS gave \mdc{fewer} holes in the foreground masks, LBAdaptiveSOM had large environment noises, MixtureOfGaussianV1BGS and DPWrenGABGS both produced a large hole in the masks from the second sample dataset. There are some false positions in the foreground mask obtained by ViBE from the first dataset, because the dataset was too short, \moda{so that} the ViBE algorithm \mdc{was} not fully learnt the background model yet. However the masks it computed were still close to the input frame, especially from the second dataset.
+The better the \moda{masks match} the moving object, the better the \moda{algorithm} is. It can be seen from \fref{Figure:bgs_frame} that MultiLayerBGS gave \mdc{fewer} holes in the foreground masks, LBAdaptiveSOM had large environment noises, MixtureOfGaussianV1BGS and DPWrenGABGS both produced a large hole in the masks from the second sample dataset. There are some false positions in the foreground mask obtained by ViBe from the first dataset, because the dataset was too short, \moda{so that} the ViBe algorithm \mdc{was} not fully learnt the background model yet. However the masks it computed were still close to the input frame, especially from the second dataset.
 
 \section{Object tracking algorithms}
 
@@ -243,7 +243,7 @@ The better the \moda{masks match} the moving object, the better the \moda{algori
 
 \subsection{Connected component analysis}
 
-Connected component analysis was done as shown \mdc{in} \fref{imp:cca}. The baseline highway sample dataset from CDNET \cite{goyette2012changedetection} was used, it has 1700 frames, 30 frames per second and the resolution is $320 \times 240$. The ViBE background subtraction algorithm was used to extract foreground masks as shown \mdc{in} \fref{imp:cca:mask}, for connected component analysis algorithm to evaluate. OpenCV's find contours \modc{function was} used to extract the blobs. However, in order for it to work properly, the masks need to be cleaned up first. This was done by applying a find contours function first, filtering out small contours that are mostly likely noises, then redraw the contours. That may still \mdc{leave} unclosed holes, therefore a Morphology transformation \cite{serra1982image} was applied afterwards to close those holes. \fref{imp:cca:mask2} shows the mask been cleaned up. Finally, apply the find contours function to the enhanced foreground mask, results in numbers of contours, outlined on the input frame shown \mdc{in} \fref{imp:cca:drawing}.
+Connected component analysis was done as shown \mdc{in} \fref{imp:cca}. The baseline highway sample dataset from CDNET \cite{goyette2012changedetection} was used, it has 1700 frames, 30 frames per second and the resolution is $320 \times 240$. The ViBe background subtraction algorithm was used to extract foreground masks as shown \mdc{in} \fref{imp:cca:mask}, for connected component analysis algorithm to evaluate. OpenCV's find contours \modc{function was} used to extract the blobs. However, in order for it to work properly, the masks need to be cleaned up first. This was done by applying a find contours function first, filtering out small contours that are mostly likely noises, then redraw the contours. That may still \mdc{leave} unclosed holes, therefore a Morphology transformation \cite{serra1982image} was applied afterwards to close those holes. \fref{imp:cca:mask2} shows the mask been cleaned up. Finally, apply the find contours function to the enhanced foreground mask, results in numbers of contours, outlined on the input frame shown \mdc{in} \fref{imp:cca:drawing}.
 
 \begin{figure}[htb]
   \centering
@@ -263,7 +263,7 @@ Connected component analysis was done as shown \mdc{in} \fref{imp:cca}. The base
     \includegraphics[width=0.4\columnwidth]{contours/drawing}
     \label{imp:cca:drawing}
   }
-  \caption{Contours extracted from foreground masks. \subref{imp:cca:input} input frame, \subref{imp:cca:mask} foreground mask extracted by ViBE, \subref{imp:cca:mask2} enhanced foreground mask, \subref{imp:cca:drawing} contours (blobs) extracted}
+  \caption{Contours extracted from foreground masks. \subref{imp:cca:input} input frame, \subref{imp:cca:mask} foreground mask extracted by ViBe, \subref{imp:cca:mask2} enhanced foreground mask, \subref{imp:cca:drawing} contours (blobs) extracted}
   \label{imp:cca}
 \end{figure}
 
