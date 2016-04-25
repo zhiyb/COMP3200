@@ -3,3 +3,6 @@ OpenCV
 dataset
 *.png
 output
+adaptive
+*.log
+*.tar

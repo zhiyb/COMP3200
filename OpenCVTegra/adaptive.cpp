@@ -10,11 +10,19 @@
 #define DATASET	"dataset/baseline/highway/"
 
 #define SHOW
+#define ADAPTIVE
 #define BLOB_SIZE	8
 #define OF_SIZE		32
 #define MOVE_MAX	26
-#define FPS_MAX		30
-#define FPS_MIN		2
+#define FPS_DATASET	30
+#define FPS_MAX		(FPS_DATASET)
+#define FPS_MIN		2	// MOVE_MAX / OF_SIZE
+
+#ifdef ADAPTIVE
+#define OUTPUT	"adaptive"
+#else
+#define OUTPUT	"output"
+#endif
 
 using namespace std;
 using namespace cv;
@@ -48,8 +56,12 @@ int main(int argc, char **argv)
 	GpuMat img_gpu, img_grey_gpu, mask_gpu;
 	Mat img, mask, drawing, prev_grey;
 	vector<vector<Point> > *prev_contours = 0;
-	ofstream ofmaxd("maxd.log");
+	ofstream oflog(OUTPUT ".log");
 
+#ifdef ADAPTIVE
+	float fps = FPS_MAX;
+	float fps_actual = FPS_DATASET;
+#endif
 	int frameNumber = 1;
 	int64_t past = getTickCount();
 	uint64_t count = 0;
@@ -57,14 +69,7 @@ int main(int argc, char **argv)
 		// Frame control
 		if (frameNumber > total)
 			break;
-
-		// Frame rate control
-#if 0
-		if (frameNumber % 8) {
-			frameNumber++;
-			continue;
-		}
-#endif
+		float itvl = 1.f / fps_actual;
 
 		// Read frame image
 		ostringstream imgfile;
@@ -161,8 +166,8 @@ int main(int argc, char **argv)
 			if (prevPts.size() > 0) {
 				vector<float> err;
 				//TermCriteria termcrit(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 20, 0.03);
-				Size winSize(32, 32);
-				calcOpticalFlowPyrLK(prev_grey, img_grey, prevPts, nextPts, ofStatus, err, winSize, 2);
+				Size winSize(OF_SIZE, OF_SIZE);
+				calcOpticalFlowPyrLK(prev_grey, img_grey, prevPts, nextPts, ofStatus, err, winSize, 1);
 			}
 		}
 		prev_grey = img_grey;
@@ -182,6 +187,8 @@ int main(int argc, char **argv)
 				if (!ofStatus[i])
 					continue;
 				double dis = norm(diff[i]);
+				if (dis > fps * MOVE_MAX)
+					continue;
 				if (dis > dismax) {
 					dismax = dis;
 					dismaxp = diff[i];
@@ -192,8 +199,12 @@ int main(int argc, char **argv)
 				//circle(drawing, nextPts[i], 3, Scalar(0.f, 0.f, 255.f), 1, 8);
 			}
 		}
-		cout << "Max distance: " << dismax << endl;
-		ofmaxd << frameNumber << "," << dismaxp.x << "," << dismaxp.y << "," << dismax << endl;
+
+		// Adaptive FPS calculation
+		fps = dismax / itvl / (float)OF_SIZE;
+		fps = max(fps, (float)FPS_MIN);
+		fps = min(fps, (float)FPS_MAX);
+
 #ifdef SHOW
 		imshow("input OF", img_grey);
 		imshow("drawing OF", drawing);
@@ -202,26 +213,33 @@ int main(int argc, char **argv)
 		// Write images
 #if 1
 		stringstream file;
-#if 0
-		file << "output/" << setw(6) << setfill('0') << frameNumber << "_mask.png";
-		imwrite(file.str(), mask_bak);
-		file.str("");
-		file.clear();
-#endif
-#if 0
-		file << "output/" << setw(6) << setfill('0') << frameNumber << "_mask2.png";
-		imwrite(file.str(), mask2_bak);
-		file.str("");
-		file.clear();
-#endif
-		file << "output/" << setw(6) << setfill('0') << frameNumber << "_drawing.png";
+		file << OUTPUT "/" << setw(6) << setfill('0') << frameNumber << "_drawing.png";
 		imwrite(file.str(), drawing);
 		file.str("");
 		file.clear();
-		file << "output/" << setw(6) << setfill('0') << frameNumber << "_input_of.png";
+		file << OUTPUT "/" << setw(6) << setfill('0') << frameNumber << "_input_of.png";
 		imwrite(file.str(), img_grey);
 #endif
-		frameNumber++;
+
+		// Frame rate control
+		int inc;
+#if 1
+#ifdef ADAPTIVE
+		inc = round((float)FPS_DATASET / ceil(fps));
+		fps_actual = (float)FPS_DATASET / (float)inc;
+#else
+		inc = 1;
+#endif
+#else
+		inc = 8;
+#endif
+
+		// Print messages
+		cout << "Max distance: " << dismax << ",\tfps: " << fps;
+		cout << ",\tactual fps: " << fps_actual << ",\tincrement: " << inc << endl;
+		oflog << frameNumber << "," << dismaxp.x << "," << dismaxp.y << "," << dismax;
+		oflog << fps << "," << fps_actual << "," << inc << endl;
+		frameNumber += inc;
 
 		// FPS calculation
 		int64_t now = getTickCount();
