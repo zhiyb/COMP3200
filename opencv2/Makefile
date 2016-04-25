@@ -6,12 +6,12 @@ TRG	= opencv_nonfree
 
 OBJ	= $(subst .S,.o,$(subst .c,.o,$(subst .cpp,.o,$(SRC:.cu=.o))))
 CC	= gcc
-FLAGS	+= -g -pg -Wall -Ofast -mfpu=neon -funsafe-math-optimizations -fabi-version=8 -Wabi -march=armv7-a -fopenmp
+FLAGS	+= -Wall -O2 -mfpu=neon -funsafe-math-optimizations -fabi-version=8 -Wabi -march=armv7-a -fopenmp
 FLAGS	+= -I.. -I/usr/local/cuda-6.5/targets/armv7-linux-gnueabihf/include
 FLAGS	+= -DHAVE_OPENCV_GPU -DHAVE_CUDA
 CFLAGS	+= $(FLAGS) -Ibgslibrary -Wno-unused-but-set-variable
 CXXFLAGS	+= $(FLAGS) -std=c++11 -Ibgslibrary -Wno-unused-but-set-variable
-LDFLAGS	+= -g -O2 -Xcompiler "-g -pg" -Xlinker "-g -pg"
+LDFLAGS	+= -O2
 LDFLAGS	+= -lglfw3 -lGLEW -lGL
 LDFLAGS	+= -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_gpu -lopencv_video
 LDFLAGS	+= -lXxf86vm -lpthread -lXrandr -lXinerama -lXi -lXcursor -lX11 -ldl
@@ -57,7 +57,7 @@ lib$(TRG).a: $(OBJ)
 	$(AR) rcs $@ $^
 
 %.o: %.cu
-	/usr/local/cuda-6.5/bin/nvcc -ccbin g++ -m32 -Xcompiler "-g -pg" -Xcompiler -mfloat-abi=hard -po maxrregcount=16 $(GENCODE_FLAGS) -o $@ -c $<
+	/usr/local/cuda-6.5/bin/nvcc -ccbin g++ -m32 -Xcompiler -mfloat-abi=hard -po maxrregcount=32 $(GENCODE_FLAGS) -o $@ -c $<
 
 .PHONY: run
 run: $(TRG)

@@ -142,14 +142,18 @@ void cvThread_CPU()
 		cv_gpu.smpr.wait(locker);
 		Mat input(cv_gpu.input);
 		Mat mask(cv_gpu.mask);
+		Mat grey(cv_gpu.grey);
 		cv_gpu.smpr.unlock(locker);
 		if (status.request & REQUEST_QUIT)
 			break;
 		if (input.empty())
 			continue;
 
-		if (status.cvShow)
+		if (status.cvShow) {
+			imshow("input", input);
+			imshow("grey", grey);
 			imshow("mask", mask);
+		}
 
 		count++;
 		frameCount++;

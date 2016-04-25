@@ -22,9 +22,12 @@ void cvThread()
 	gpu::setDevice(0);
 
 #if 1
+	float sizef = 0.5f;
 	gpu::GpuMat raw(status.height, status.width, CV_16UC1);
 	gpu::GpuMat rawu8(status.height, status.width, CV_8UC1);
-	gpu::GpuMat img(status.height, status.width, CV_8UC3);
+	gpu::GpuMat img_orig(status.height, status.width, CV_8UC3);
+	gpu::GpuMat img(status.height * sizef, status.width * sizef, CV_8UC3);
+	gpu::GpuMat img_grey(status.height * sizef, status.width * sizef, CV_8UC1);
 #if 0
 	gpu::GpuMat *img_s = new gpu::GpuMat(status.height / 2, status.width / 2, CV_8UC3);
 #endif
@@ -66,8 +69,10 @@ void cvThread()
 			continue;
 
 		raw.convertTo(rawu8, CV_8UC1, 1.f / 4.f);
-		gpu::cvtColor(rawu8, img, CV_BayerBG2RGB);
-#if 1
+		gpu::cvtColor(rawu8, img_orig, CV_BayerBG2RGB);
+		gpu::resize(img_orig, img, Size(), sizef, sizef);
+		gpu::cvtColor(img, img_grey, CV_RGB2GRAY);
+#if 0
 		gpu::GaussianBlur(img, img, Size(5, 5), 1.5);
 #endif
 #if 0
@@ -89,33 +94,31 @@ void cvThread()
 		// by default, it shows automatically the foreground mask image
 		bgs->process(img_input, img_mask, img_bkgmodel);
 #else
-		if (frameCount == 10)
-			vibe.initialize(img);
-		else {
-			vibe(img, fgmask);
+		vibe(img, fgmask);
 #if 0
-			gpu::blur(*fgmask, *fgmask, Size(5, 5));
+		gpu::blur(*fgmask, *fgmask, Size(5, 5));
 #endif
 #if 1
-			Mat input, mask;
-			fgmask.download(mask);
-			img.download(input);
+		Mat input, grey, mask;
+		fgmask.download(mask);
+		img.download(input);
+		img_grey.download(grey);
 #if 1
-			locker = cv_gpu.smpr.lock();
-			cv_gpu.input = input;
-			cv_gpu.mask = mask;
-			cv_gpu.smpr.notify();
-			cv_gpu.smpr.unlock(locker);
+		locker = cv_gpu.smpr.lock();
+		cv_gpu.input = input;
+		cv_gpu.grey = grey;
+		cv_gpu.mask = mask;
+		cv_gpu.smpr.notify();
+		cv_gpu.smpr.unlock(locker);
 #endif
 #endif
 #if 0
-			medianBlur(img_mask, img_mask, 5);
+		medianBlur(img_mask, img_mask, 5);
 #endif
 #if 0
-			if (status.cvShow)
-				imshow("mask", img_mask);
+		if (status.cvShow)
+			imshow("mask", img_mask);
 #endif
-		}
 #endif
 
 		count++;

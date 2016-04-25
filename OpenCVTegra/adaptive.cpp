@@ -7,11 +7,11 @@
 #include <opencv2/gpu/gpu.hpp>
 #include "opencv2/nonfree/gpu.hpp"
 
-#define DATASET	"dataset/baseline/office/"
+#define DATASET	"dataset/dynamicBackground/overpass/"
 
 #define SHOW
 //#define HALFSIZE
-//#define ADAPTIVE
+#define ADAPTIVE
 #define BLOB_SIZE	8
 #define OF_SIZE		32
 #define FPS_DATASET	30

@@ -10,19 +10,21 @@ TRG	= V4L2
 DEV	= /dev/video0
 #RES	= 2592 1944
 #RES	= 1920 1080
-RES	= 1280 960
-#RES	= 640 480
+#RES	= 1280 960
+RES	= 640 480
 #RES	= 320 240
 
 OBJ	= $(subst .S,.o,$(subst .c,.o,$(subst .cpp,.o,$(SRC:.cu=.o))))
 CC	= gcc
 BGSLIB	= ../bgslibrary
-FLAGS	+= -g -pg -Wall -Ofast -mfpu=neon -funsafe-math-optimizations -fabi-version=8 -Wabi -march=armv7-a -fopenmp
+#FLAGS	+= -g -pg
+FLAGS	+= -Wall -O2 -mfpu=neon -funsafe-math-optimizations -fabi-version=8 -Wabi -march=armv7-a -fopenmp
 FLAGS	+= -I. -I.. -I../bgslibrary -I/usr/local/cuda-6.5/targets/armv7-linux-gnueabihf/include
 FLAGS	+= -DHAVE_OPENCV_GPU -DHAVE_CUDA
 CFLAGS	+= $(FLAGS) -Wno-unused-but-set-variable
 CXXFLAGS	+= $(FLAGS) -std=c++11 -I$(BGSLIB) -Wno-unused-but-set-variable
-LDFLAGS	+= -g -O2
+#LDFLAGS	+= -g
+LDFLAGS	+= -O2
 LDFLAGS += -L$(BGSLIB) -lbgslibrary
 LDFLAGS	+= -L../opencv2 -lopencv_nonfree
 LDFLAGS	+= -lglfw3 -lGLEW -lGL
@@ -65,7 +67,8 @@ $(TRG): $(OBJ)
 #$(CXX) $^ $(LDFLAGS) -o $@
 
 %.o: %.cu
-	/usr/local/cuda-6.5/bin/nvcc -ccbin g++ -m32 -Xcompiler "-g -pg" -Xcompiler -mfloat-abi=hard -po maxrregcount=16 $(GENCODE_FLAGS) -o $@ -c $<
+	/usr/local/cuda-6.5/bin/nvcc -ccbin g++ -m32 -Xcompiler -mfloat-abi=hard -po maxrregcount=32 $(GENCODE_FLAGS) -o $@ -c $<
+#	/usr/local/cuda-6.5/bin/nvcc -ccbin g++ -m32 -Xcompiler "-g -pg" -Xcompiler -mfloat-abi=hard -po maxrregcount=32 $(GENCODE_FLAGS) -o $@ -c $<
 
 .PHONY: run
 run: $(TRG)
