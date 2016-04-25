@@ -39,6 +39,8 @@ int main( void )
 
 	//-- 2. Read the video stream
 	capture.open( 0 );
+	int64_t past = getTickCount();
+	uint64_t count = 0;
 	if( capture.isOpened() )
 	{
 		for(;;)
@@ -51,9 +53,17 @@ int main( void )
 			else
 			{ printf(" --(!) No captured frame -- Break!"); break; }
 
-			int c = waitKey(10);
+			int c = waitKey(1);
 			if( (char)c == 'c' ) { break; }
 
+			int64_t now = getTickCount();
+			if (now - past > 3 * getTickFrequency()) {
+				float fps = (float)count / (now - past) * getTickFrequency();
+				count = 0;
+				past = now;
+				printf("Window FPS: %g\n", fps);
+			}
+			count++;
 		}
 	}
 	return 0;

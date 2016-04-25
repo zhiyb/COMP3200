@@ -14,14 +14,16 @@ QMAKE_LIBDIR	+= D:\Programs\misc\opencv\build\x86\mingw\bin
 QMAKE_LIBDIR	+= D:\Programs\misc\opencv\build\x86\mingw\lib
 
 SOURCES += \
-    Object.cpp \
-    objectDetection2.cpp \
-    circles.cpp \
-    circles_file.cpp \
-    edges.cpp \
-    edges_file.cpp \
-    motionTracking.cpp \
-    multipleObjectTracking.cpp \
+#    objectDetection2.cpp \
+#    circles.cpp \
+#    circles_file.cpp \
+#    edges.cpp \
+#    edges_file.cpp \
+#    motionTracking.cpp \
+# Colour based
+#    Object.cpp \
+#    multipleObjectTracking.cpp \
+# Cascade classifier
     objectDetection.cpp
 
 HEADERS += \

@@ -4,7 +4,7 @@
 
 \modc{\subsection{Hardware connection}}
 
-The Raspberry Pi camera module was connected to the Jetson TK1 board as shown \mdc{in} \fref{imp:schematic}\modc{, \fref{imp:connection}}. A 74HCT245 bus transceiver chip was used as a buffer for voltage level conversion, since GPIOs on the Jetson board are using $1.8V$ voltage level while the Raspberry Pi module is working at $3.3V$ voltage level. \modc{The camera needs 2 discrete interfaces for control and communicate, I2C and MIPI-CSI. I2C interface is a relatively low speed interface with multi master and multi slave addressing support, is used to control and configure the camera. MIPI-CSI interface is a high speed data transmission interface designed for high resolution cameras, by having multiple differential data lanes to multiple maximum transmission speed. The camera uses 2 data lanes to transmit frame data and synchronise.}
+The Raspberry Pi camera module was connected to the Jetson TK1 board as shown \mdc{in} \fref{imp:schematic}\modc{ and \fref{imp:connection}}. A 74HCT245 bus transceiver chip was used as a buffer for voltage level conversion, since GPIOs on the Jetson board are using $1.8V$ voltage level while the Raspberry Pi module is working at $3.3V$ voltage level. \modc{The camera needs 2 discrete interfaces for control and communicate, I2C and MIPI-CSI. I2C interface is a relatively low speed interface with multi master and multi slave addressing support, is used to control and configure the camera. MIPI-CSI interface is a high speed data transmission interface designed for high resolution cameras, by having multiple differential data lanes to multiple maximum transmission speed. The camera uses 2 data lanes to transmit frame data and synchronise.}
 
 \begin{figure}[htb]
   \centering
@@ -20,7 +20,7 @@ The Raspberry Pi camera module was connected to the Jetson TK1 board as shown \m
   \label{imp:connection}
 \end{figure}
 
-The camera module is using an on-board $25 MHz$ oscillator, then multiplied to $48 MHz$ pixel clock by Phase Locked Loop (PLL) inside the camera sensor. Changing of frame interval was done by adding dummy blank lines after frame data.
+The camera module is using an on-board $25$ MHz oscillator, multiplied to $48$ MHz pixel clock by Phase Locked Loop (PLL) inside the camera sensor. Alteration of frame interval was done by adding dummy blank lines after actual frame data.
 
 The GPIO on the camera module is controlling \mdc{an} LED mounted on the module, and it is controllable through the camera driver. Therefore by controlling the GPIO, it not only \mdc{can give} indications about camera activity, but also is very useful for debugging and triggering external power analyser.
 
@@ -178,7 +178,7 @@ The OpenCV's cascade classifier implementation \cite{opencv:cc} of face and eye 
   \label{Figure:cc_face}
 \end{figure}
 
-Noticeable frame rate drop \modc{(only about 3 fps) was} experienced when running the cascade classifier implementation on the testing platform, \mdc{suggesting that} it might not be a suitable algorithm for real-time object tracking application on embedded platforms.
+Noticeable frame rate drop \modc{(only about 3 FPS) was} experienced when running the cascade classifier implementation on the testing platform, \mdc{suggesting that} it might not be a suitable algorithm for real-time object tracking application on embedded platforms.
 
 \moda{\subsection{Motion based background subtraction}}
 
@@ -305,7 +305,7 @@ Connected component analysis was done as shown \mdc{in} \fref{imp:cca}. The base
     \includegraphics[width=0.3\columnwidth]{optical/between/next_drawing}
     \label{imp:of:next_drawing}
   }
-  \caption{Sparse set optical flow tracking between 2 frames. \subref{imp:of:prev} previous frame, \subref{imp:of:prev_input_of} masked previous frame, \subref{imp:of:prev_drawing} optical tracking result at the previous frame, \subref{imp:of:next} next frame, \subref{imp:of:next_input_of} masked next frame, \subref{imp:of:next_drawing} optical flow tracking result at the next frame. {\color{red}Red circles}: Destinations of feature points generated from previous frame; {\color{dkgreen}Green lines}: Movements of the feature points; {\color{blue}Blue outline}: Object blobs extracted from foreground mask.}
+  \caption{Sparse set optical flow tracking between 2 frames. \subref{imp:of:prev} previous frame, \subref{imp:of:prev_input_of} masked previous frame, \subref{imp:of:prev_drawing} optical tracking result at the previous frame, \subref{imp:of:next} next frame, \subref{imp:of:next_input_of} masked next frame, \subref{imp:of:next_drawing} optical flow tracking result at the next frame. {\color{red}Red circles}: Destinations of feature points generated from previous frame; {\color{dkgreen}Green lines}: Movements of the feature points; {\color{blue}Blue \modc{outlines}}: Object blobs extracted from foreground mask.}
   \label{imp:of}
 \end{figure}
 
@@ -323,7 +323,7 @@ However, sometimes the optical flow algorithm may \mdc{give} incorrect tracking 
     \includegraphics[width=0.45\columnwidth]{optical/error/000171_drawing}
     \label{imp:of:error:2}
   }
-  \caption{Situation when optical flow gives unrealistic results for 2 frames from CDNET baseline PETS2006 dataset. {\color{dkgreen}Green lines}: Movements of the feature points; {\color{blue}Blue outline}: Object blobs extracted from foreground mask.}
+  \caption{Situation when optical flow gives unrealistic results for 2 frames from CDNET baseline PETS2006 dataset. {\color{dkgreen}Green lines}: Movements of the feature points; {\color{blue}Blue \modc{outlines}}: Object blobs extracted from foreground mask.}
   \label{imp:of:error}
 \end{figure}
 
@@ -334,6 +334,7 @@ By relating the destination of movements of feature points from blobs in previou
 Adaptive energy saving operation was done by varying input video stream frame rate based on object tracking results, a feedback loop as previous illustrated in the system block diagram (\fref{block}).
 
 \subsection{Parameter metrics}
+\label{imp:ada:metric}
 
 For it to work optimistically in a particular scenario, a few parameter metrics are required, listed in \tref{imp:ada:par}.
 
@@ -370,12 +371,43 @@ The maximum frame rate is only limited by algorithm computation speed and hardwa
 
 \subsection{Frame rate adaptation}
 
-Having calculated the maximum movement distance of feature points between adjacent frames, the frame rate is then calculated as \eref{f_rate}. The frame interval will be adjusted according to this by the main thread.
+Having calculated the maximum movement distance of feature points between adjacent frames, the frame rate is then calculated as \eref{f_rate}. The frame interval will then be adjusted according to this by the main thread.
 
 \begin{equation}
 	f = \frac{\text{Maximum movement distance}}{\text{Optical flow optimum tracking length} \times \text{Time between frames}}
 	\label{f_rate}
 \end{equation}
 
-{\color{red}Implementation? BOOM}
+%{\color{red}Implementation? BOOM}
+
+\fref{imp:ada:ex} shows a sequence of frames evaluated from the CDNET baseline highway dataset. The frame indices are not continuous due to the adaptive operation applied. It can be seen from the sequence of frames that the change of frame rate (\fref{imp:ada:ex:part}) is clearly related to the speeds of objects. The maximum object travelling distances between frames evaluated indicated by the green lines are almost the same.
+
+\begin{figure*}[htb]
+  \centering
+  \subfigure[Frame 1566]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001566_drawing}}
+  \subfigure[Frame 1581]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001581_drawing}}
+  \subfigure[Frame 1596]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001596_drawing}}
+  \subfigure[Frame 1611]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001611_drawing}}
+  \subfigure[Frame 1626]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001626_drawing}}
+  \subfigure[Frame 1636]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001636_drawing}}
+  \subfigure[Frame 1644]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001644_drawing}}
+  \subfigure[Frame 1649]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001649_drawing}}
+  \subfigure[Frame 1654]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001654_drawing}}
+  \subfigure[Frame 1658]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001658_drawing}}
+  \subfigure[Frame 1661]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001661_drawing}}
+  \subfigure[Frame 1665]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001665_drawing}}
+  \subfigure[Changes of frame rate through the sequence shown above]{
+    \includegraphics[width=0.7\columnwidth]{adaptive/example/fps_part}
+    \label{imp:ada:ex:part}
+  }
+  \subfigure[Changes of frame rate through the entire dataset]{
+    \includegraphics[width=\columnwidth]{adaptive/example/fps_all}
+    \label{imp:ada:ex:all}
+  }
+  \caption{Frames evaluated from the highway dataset after applied adaptive operation.}
+  \label{imp:ada:ex}
+\end{figure*}
+
+The changes of frame rate through the entire dataset are shown in \fref{imp:ada:ex:all}. Most of the time frame rate is below 10 FPS, results in only 274 out of 1700 frames in the dataset been evaluated, saves a lot of computation.
+
 %\section{Video stream dataset}
