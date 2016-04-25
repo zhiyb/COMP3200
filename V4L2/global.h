@@ -19,6 +19,7 @@ enum {	REQUEST_NONE = 0x00,
 	REQUEST_CAPTURE,
 	REQUEST_QUIT,
 	REQUEST_SWAP,
+	REQUEST_FPS,
 };
 
 extern struct status_t {
@@ -27,6 +28,7 @@ extern struct status_t {
 	volatile bool swap, pvUpdate, cvShow;
 	// Video, Preview, CV FPS
 	volatile float vFPS, pvFPS, cvFPS_GPU, cvFPS_CPU, cvFPS_disp;
+	volatile float fps_request;
 } status;
 
 // V4L2

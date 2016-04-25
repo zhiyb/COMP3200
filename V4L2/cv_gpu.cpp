@@ -72,8 +72,8 @@ void cvThread()
 		gpu::cvtColor(rawu8, img_orig, CV_BayerBG2RGB);
 		gpu::resize(img_orig, img, Size(), sizef, sizef);
 		gpu::cvtColor(img, img_grey, CV_RGB2GRAY);
-#if 0
-		gpu::GaussianBlur(img, img, Size(5, 5), 1.5);
+#if 1
+		gpu::GaussianBlur(img, img, Size(3, 3), 1.5);
 #endif
 #if 0
 		gpu::resize(*img, *img_s, Size(), 0.5, 0.5);

@@ -5,136 +5,54 @@
 #include "global.h"
 #include "cv_private.h"
 
-#if 0
-#include "package_bgs/FrameDifferenceBGS.h"
-#include "package_bgs/StaticFrameDifferenceBGS.h"
-#include "package_bgs/WeightedMovingMeanBGS.h"
-#include "package_bgs/WeightedMovingVarianceBGS.h"
-#include "package_bgs/MixtureOfGaussianV1BGS.h"
-#include "package_bgs/MixtureOfGaussianV2BGS.h"
-#include "package_bgs/AdaptiveBackgroundLearning.h"
-#include "package_bgs/AdaptiveSelectiveBackgroundLearning.h"
-
-#if CV_MAJOR_VERSION >= 2 && CV_MINOR_VERSION >= 4 && CV_SUBMINOR_VERSION >= 3
-#include "package_bgs/GMG.h"
-#endif
-
-#include "package_bgs/dp/DPAdaptiveMedianBGS.h"
-#include "package_bgs/dp/DPGrimsonGMMBGS.h"
-#include "package_bgs/dp/DPZivkovicAGMMBGS.h"
-#include "package_bgs/dp/DPMeanBGS.h"
-#include "package_bgs/dp/DPWrenGABGS.h"
-#include "package_bgs/dp/DPPratiMediodBGS.h"
-#include "package_bgs/dp/DPEigenbackgroundBGS.h"
-#include "package_bgs/dp/DPTextureBGS.h"
-
-#include "package_bgs/tb/T2FGMM_UM.h"
-#include "package_bgs/tb/T2FGMM_UV.h"
-#include "package_bgs/tb/T2FMRF_UM.h"
-#include "package_bgs/tb/T2FMRF_UV.h"
-#include "package_bgs/tb/FuzzySugenoIntegral.h"
-#include "package_bgs/tb/FuzzyChoquetIntegral.h"
-
-#include "package_bgs/lb/LBSimpleGaussian.h"
-#include "package_bgs/AdaptiveBackgroundLearning.h"
-#include "package_bgs/lb/LBFuzzyGaussian.h"
-#include "package_bgs/lb/LBMixtureOfGaussians.h"
-#include "package_bgs/lb/LBAdaptiveSOM.h"
-#include "package_bgs/lb/LBFuzzyAdaptiveSOM.h"
-
-#include "package_bgs/ck/LbpMrf.h"
-#include "package_bgs/jmo/MultiLayerBGS.h"
-// The PBAS algorithm was removed from BGSLibrary because it is
-// based on patented algorithm ViBE
-// http://www2.ulg.ac.be/telecom/research/vibe/
-//#include "package_bgs/pt/PixelBasedAdaptiveSegmenter.h"
-#include "package_bgs/av/VuMeter.h"
-#include "package_bgs/AdaptiveBackgroundLearning.h"
-#include "package_bgs/ae/KDE.h"
-#include "package_bgs/db/IndependentMultimodalBGS.h"
-#include "package_bgs/sjn/SJN_MultiCueBGS.h"
-#include "package_bgs/bl/SigmaDeltaBGS.h"
-
-#include "package_bgs/pl/SuBSENSE.h"
-#include "package_bgs/pl/LOBSTER.h"
+//#define ADAPTIVE
+#define BLOB_SIZE	7
+#define OF_SIZE		32
+#define FPS_DATASET	30
+#ifdef ADAPTIVE
+//#define MOVE_MAX	26	// baseline/highway
+#define MOVE_MAX	movemax	// read from file
+#define FPS_MAX		(FPS_DATASET)
+#define FPS_MIN		2	// MOVE_MAX / OF_SIZE
 #endif
 
 using namespace std;
 using namespace cv;
 
+void maskEnhance(Mat mask)
+{
+#if 1
+	//Mat img_mask(mask.size(), mask.type(), Scalar(0.f));
+#if 1
+	// find blobs
+	std::vector<std::vector<cv::Point> > v;
+	std::vector<cv::Vec4i> hierarchy;
+	cv::findContours(mask, v, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+	mask = Scalar(0);
+	for (size_t i=0; i < v.size(); ++i)
+	{
+		// drop smaller blobs
+		if (cv::contourArea(v[i]) < BLOB_SIZE * BLOB_SIZE)
+			continue;
+		// draw filled blob
+		cv::drawContours(mask, v, i, cv::Scalar(255,0,0), CV_FILLED, 8, hierarchy, 0, cv::Point());
+	}
+#endif
+
+	// morphological closure
+	cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(BLOB_SIZE, BLOB_SIZE));
+	cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, element);
+#endif
+}
+
 // OpenCV CPU post processing
 void cvThread_CPU()
 {
-#if 0
-	/* Background Subtraction Methods */
-	IBGS *bgs;
-
-	/*** Default Package ***/
-	//bgs = new FrameDifferenceBGS;
-	//bgs = new StaticFrameDifferenceBGS;
-	//bgs = new WeightedMovingMeanBGS;
-	//bgs = new WeightedMovingVarianceBGS;
-	//bgs = new MixtureOfGaussianV1BGS;
-	bgs = new MixtureOfGaussianV2BGS;
-	//bgs = new AdaptiveBackgroundLearning;
-	//bgs = new AdaptiveSelectiveBackgroundLearning;
-	//bgs = new GMG;
-
-	/*** DP Package (thanks to Donovan Parks) ***/
-	//bgs = new DPAdaptiveMedianBGS;
-	//bgs = new DPGrimsonGMMBGS;
-	//bgs = new DPZivkovicAGMMBGS;
-	//bgs = new DPMeanBGS;
-	//bgs = new DPWrenGABGS;
-	//bgs = new DPPratiMediodBGS;
-	//bgs = new DPEigenbackgroundBGS;
-	//bgs = new DPTextureBGS;
-
-	/*** TB Package (thanks to Thierry Bouwmans, Fida EL BAF and Zhenjie Zhao) ***/
-	//bgs = new T2FGMM_UM;
-	//bgs = new T2FGMM_UV;
-	//bgs = new T2FMRF_UM;
-	//bgs = new T2FMRF_UV;
-	//bgs = new FuzzySugenoIntegral;
-	//bgs = new FuzzyChoquetIntegral;
-
-	/*** JMO Package (thanks to Jean-Marc Odobez) ***/
-	//bgs = new MultiLayerBGS;
-
-	/*** PT Package (thanks to Martin Hofmann, Philipp Tiefenbacher and Gerhard Rigoll) ***/
-	//bgs = new PixelBasedAdaptiveSegmenter;
-
-	/*** LB Package (thanks to Laurence Bender) ***/
-	//bgs = new LBSimpleGaussian;
-	//bgs = new LBFuzzyGaussian;
-	//bgs = new LBMixtureOfGaussians;
-	//bgs = new LBAdaptiveSOM;
-	//bgs = new LBFuzzyAdaptiveSOM;
-
-	/*** LBP-MRF Package (thanks to Csaba Kertész) ***/
-	//bgs = new LbpMrf;
-
-	/*** AV Package (thanks to Lionel Robinault and Antoine Vacavant) ***/
-	//bgs = new VuMeter;
-
-	/*** EG Package (thanks to Ahmed Elgammal) ***/
-	//bgs = new KDE;
-
-	/*** DB Package (thanks to Domenico Daniele Bloisi) ***/
-	//bgs = new IndependentMultimodalBGS;
-
-	/*** SJN Package (thanks to SeungJong Noh) ***/
-	//bgs = new SJN_MultiCueBGS;
-
-	/*** BL Package (thanks to Benjamin Laugraud) ***/
-	//bgs = new SigmaDeltaBGS;
-
-	/*** PL Package (thanks to Pierre-Luc) ***/
-	//bgs = new SuBSENSEBGS();
-	//bgs = new LOBSTERBGS();
-#endif
-
 	std::unique_lock<std::mutex> locker;
+
+	Mat grey_prev, drawing;
+	vector<vector<Point> > *prev_contours = 0;
+
 	int64_t past = getTickCount(), count = 0;
 	unsigned long frameCount = 0;
 	while (1) {
@@ -149,10 +67,102 @@ void cvThread_CPU()
 		if (input.empty())
 			continue;
 
+#if 0
 		if (status.cvShow) {
 			imshow("input", input);
-			imshow("grey", grey);
-			imshow("mask", mask);
+			//imshow("grey", grey);
+			//imshow("mask", mask);
+		}
+#endif
+
+		// Enhance foreground mask
+		maskEnhance(mask);
+
+		Mat grey_masked;
+		grey.copyTo(grey_masked, mask);
+
+		if (status.cvShow) {
+			imshow("input OF", grey_masked);
+		}
+
+		// Extract contours
+		input.copyTo(drawing);
+		vector<vector<Point> > *contours = new vector<vector<Point> >;
+#if 1
+		{
+			/// Find contours
+			std::vector<cv::Vec4i> hierarchy;
+			//std::vector<cv::Vec4i> hierarchy;
+			cv::findContours(mask, *contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+			/// Approximate contours to polygons + get bounding rects and circles
+			vector<vector<Point> > contours_poly(contours->size());
+
+			/// Draw polygonal contour + bonding rects + circles
+			for (size_t i = 0; i < contours->size(); i++) {
+				// drop smaller blobs
+				if (cv::contourArea((*contours)[i]) < BLOB_SIZE)
+					continue;
+
+				//Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255));
+				Scalar color(255.f, 0.f, 0.f);
+				cv::drawContours(drawing, *contours, i, color, 2, 8, hierarchy, 0, Point());
+			}
+		}
+#endif
+
+		// Optical flow tracking between frames
+		vector<Point2f> prevPts, nextPts;
+		vector<uchar> ofStatus;
+		if (!grey_prev.empty() && prev_contours != 0) {
+#if 0
+			goodFeaturesToTrack(prev_grey, prevPts, 32, 0.1, 3, mask);
+#else
+			for (vector<Point> &points: *prev_contours)
+				for (Point &point: points)
+					prevPts.push_back(point);
+#endif
+			if (prevPts.size() > 0) {
+				vector<float> err;
+				//TermCriteria termcrit(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 20, 0.03);
+				Size winSize(OF_SIZE, OF_SIZE);
+				calcOpticalFlowPyrLK(grey_prev, grey_masked, prevPts, nextPts, ofStatus, err, winSize, 1);
+			}
+		}
+		grey_prev = grey_masked;
+
+		if (prev_contours)
+			delete prev_contours;
+		prev_contours = contours;
+
+		double dismax = 0.f;
+		Point2f dismaxp;
+		if (prevPts.size() > 0) {
+			Mat d;
+			absdiff(Mat(prevPts), Mat(nextPts), d);
+			vector<Point2f> diff;
+			d.copyTo(diff);
+			for (size_t i = 0; i < prevPts.size(); i++) {
+				if (!ofStatus[i])
+					continue;
+				double dis = norm(diff[i]);
+#ifdef ADAPTIVE
+				if (dis > fps * MOVE_MAX)
+					continue;
+#endif
+				if (dis > dismax) {
+					dismax = dis;
+					dismaxp = diff[i];
+				}
+				//line(drawing, center[i], next_points[i], colour, 5);
+				line(drawing, prevPts[i], nextPts[i], Scalar(0.f, 255.f, 0.f), 1, 8);
+				//circle(drawing, prevPts[i], 3, Scalar(0.f, 0.f, 255.f), 1, 8);
+				circle(drawing, nextPts[i], 3, Scalar(0.f, 0.f, 255.f), 1, 8);
+			}
+		}
+
+		if (status.cvShow) {
+			imshow("output OF", drawing);
 		}
 
 		count++;
@@ -169,4 +179,5 @@ void cvThread_CPU()
 			break;
 	}
 	status.request = REQUEST_QUIT;
+	delete prev_contours;
 }
