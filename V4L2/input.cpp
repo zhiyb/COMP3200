@@ -6,15 +6,17 @@
 #include <map>
 #include <cstdlib>
 #include <cstring>
+#include <cmath>
 
 #include "global.h"
 #include "escape.h"
+#include "camera.h"
 
 using namespace std;
 
 #define FUNC_DBG	ESC_GREY << __func__ << ": "
 
-static void writeRegister(const bool word, const unsigned int addr, const unsigned int value)
+void writeRegister(const bool word, const unsigned int addr, const unsigned int value)
 {
 	//cout << FUNC_DBG << ESC_BLUE;
 	uint32_t val = (word ? OV5647_CID_REG_WMASK : 0) | ((uint32_t)addr << 16) | value;
@@ -30,7 +32,7 @@ static void writeRegister(const bool word, const unsigned int addr, const unsign
 #endif
 }
 
-static void readRegister(const bool word, const unsigned int addr)
+unsigned int readRegister(const bool word, const unsigned int addr, const bool print)
 {
 	cout << FUNC_DBG << ESC_BLUE;
 	uint32_t val = (word ? OV5647_CID_REG_WMASK : 0) | ((uint32_t)addr << 16);
@@ -40,14 +42,31 @@ static void readRegister(const bool word, const unsigned int addr)
 	ret = video_get_control(&dev, OV5647_CID_REG_R, &val);
 	if (ret)
 		cerr << ESC_RED << strerror(ret) << endl;
+	else if (!print)
+		return val;
 	else if (word)
 		printf("0x%04x", val & 0xffff);
 	else
 		printf("0x%02x", val & 0xff);
 	cout << endl;
+	return val;
 }
 
-static void fixed(const bool e)
+unsigned int setFPS(float fps)
+{
+	static unsigned int lines_prev = CAM_LINES;
+	fps = max(fps, FPS_MIN);
+	fps = min(fps, FPS_MAX);
+	unsigned int lines = round((1.f / fps * 1000.f - CAM_ITVL) / CAM_LINEITVL * 1000.f + CAM_LINES);
+	if (abs(lines - lines_prev) > CAM_CHANGE)
+		lines = lines > lines_prev ? lines_prev + CAM_CHANGE : lines_prev - CAM_CHANGE;
+	lines_prev = lines;
+	// Total lines
+	writeRegister(true, 0x380e, lines);
+	return lines;
+}
+
+void fixed(const bool e)
 {
 	if (e) {
 		// AGC AEC manual
@@ -82,16 +101,23 @@ loop:
 		goto loop;
 	bool word = false;
 	if (cmd == "fps") {
-		cout << "  Video: " << status.vFPS << endl;
-		cout << "Preview: " << status.pvFPS << endl;
-		cout << " CV GPU: " << status.cvFPS_GPU << endl;
-		cout << " CV CPU: " << status.cvFPS_CPU << endl;
-		cout << "CV disp: " << status.cvFPS_disp << endl;
+		float e;
+		if (!(sstr >> e)) {
+			cout << "  Video: " << status.vFPS << endl;
+			cout << "Preview: " << status.pvFPS << endl;
+			cout << " CV GPU: " << status.cvFPS_GPU << endl;
+			cout << " CV CPU: " << status.cvFPS_CPU << endl;
+			cout << "CV disp: " << status.cvFPS_disp << endl;
+		} else {
+			unsigned int l = setFPS(e);
+			cout << "Set camera FPS: " << e << endl;
+			cout << " Output liness: " << l << endl;
+		}
 	} else if (cmd == "rb" || (word = (cmd == "rw"))) {
 		unsigned int addr;
 		if (!(sstr >> addr))
 			goto loop;
-		readRegister(word, addr);
+		readRegister(word, addr, true);
 	} else if (cmd == "wb" || (word = (cmd == "ww"))) {
 		unsigned int addr, value;
 		if (!(sstr >> addr >> value))

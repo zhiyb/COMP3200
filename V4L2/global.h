@@ -34,6 +34,7 @@ extern struct status_t {
 // V4L2
 extern struct device dev;
 extern volatile unsigned int bufidx;
+extern volatile int64_t timestamps[BUFFER_NUM];
 
 class semaphore_t
 {
@@ -101,5 +102,9 @@ extern struct thread_t cvData;
 void inputThread();
 void cvThread();
 void pvThread();
+void writeRegister(const bool word, const unsigned int addr, const unsigned int value);
+unsigned int readRegister(const bool word, const unsigned int addr, const bool print = false);
+unsigned int setFPS(float fps);
+void fixed(const bool e);
 
 #endif

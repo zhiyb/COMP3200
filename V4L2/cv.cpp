@@ -3,18 +3,13 @@
 #include <opencv2/gpu/gpu.hpp>
 #include "opencv2/nonfree/gpu.hpp"
 #include "global.h"
+#include "camera.h"
 #include "cv_private.h"
 
-//#define ADAPTIVE
+#define ADAPTIVE
+#define MOVE_MAX	64
 #define BLOB_SIZE	7
 #define OF_SIZE		32
-#define FPS_DATASET	30
-#ifdef ADAPTIVE
-//#define MOVE_MAX	26	// baseline/highway
-#define MOVE_MAX	movemax	// read from file
-#define FPS_MAX		(FPS_DATASET)
-#define FPS_MIN		2	// MOVE_MAX / OF_SIZE
-#endif
 
 using namespace std;
 using namespace cv;
@@ -53,11 +48,14 @@ void cvThread_CPU()
 	Mat grey_prev, drawing;
 	vector<vector<Point> > *prev_contours = 0;
 
+	float fps = FPS_MAX;
 	int64_t past = getTickCount(), count = 0;
+	uint64_t ts, ts_prev = 0;
 	unsigned long frameCount = 0;
 	while (1) {
 		locker = cv_gpu.smpr.lock();
 		cv_gpu.smpr.wait(locker);
+		ts = cv_gpu.ts;
 		Mat input(cv_gpu.input);
 		Mat mask(cv_gpu.mask);
 		Mat grey(cv_gpu.grey);
@@ -67,6 +65,8 @@ void cvThread_CPU()
 		if (input.empty())
 			continue;
 
+		float itvl = (float)(ts - ts_prev) / (float)cv::getTickFrequency();
+		ts_prev = ts;
 #if 0
 		if (status.cvShow) {
 			imshow("input", input);
@@ -164,6 +164,15 @@ void cvThread_CPU()
 		if (status.cvShow) {
 			imshow("output OF", drawing);
 		}
+
+#ifdef ADAPTIVE
+		// Adaptive FPS calculation
+		fps = dismax / itvl / (float)OF_SIZE;
+		fps = max(fps, (float)FPS_MIN);
+		fps = min(fps, (float)FPS_MAX);
+		//cout << fps << endl;
+		setFPS(fps);
+#endif
 
 		count++;
 		frameCount++;

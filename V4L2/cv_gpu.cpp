@@ -51,6 +51,7 @@ void cvThread()
 		cvData.mtx.lock();
 		cvData.bufidx = bufidx;
 		cvData.mtx.unlock();
+		cv_gpu.ts = timestamps[bufidx];
 #if 1
 		if (++frameCount >= 10) {
 			raw.upload(Mat(status.height, status.width, CV_16UC1, dev.buffers[cvData.bufidx].mem));

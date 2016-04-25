@@ -13,6 +13,7 @@ using namespace cv;
 struct device dev;
 //struct v4l2_buffer buf;
 volatile unsigned int bufidx = 0;
+volatile int64_t timestamps[BUFFER_NUM];
 
 struct status_t status;
 enum {Queued = 0, Captured, Used, Free} bufstatus[BUFFER_NUM] = {Queued};
@@ -142,6 +143,7 @@ restart:
 		} else
 			bufidx = buf.index;
 		bufstatus[bufidx] = Captured;
+		timestamps[bufidx] = getTickCount();
 #if ENABLE_CV
 		cvData.notify();
 #endif
