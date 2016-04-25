@@ -7,10 +7,10 @@
 #include <opencv2/gpu/gpu.hpp>
 #include "opencv2/nonfree/gpu.hpp"
 
-#define DATASET	"dataset/dynamicBackground/overpass/"
+#define DATASET	"dataset/baseline/PETS2006/"
 
 #define SHOW
-//#define HALFSIZE
+#define HALFSIZE
 #define ADAPTIVE
 #define BLOB_SIZE	8
 #define OF_SIZE		32
@@ -19,7 +19,7 @@
 //#define MOVE_MAX	26	// baseline/highway
 #define MOVE_MAX	movemax	// read from file
 #define FPS_MAX		(FPS_DATASET)
-#define FPS_MIN		2	// MOVE_MAX / OF_SIZE
+#define FPS_MIN		5	// MOVE_MAX / OF_SIZE
 #endif
 
 #ifdef ADAPTIVE

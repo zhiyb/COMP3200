@@ -17,12 +17,12 @@ RES	= 640 480
 OBJ	= $(subst .S,.o,$(subst .c,.o,$(subst .cpp,.o,$(SRC:.cu=.o))))
 CC	= gcc
 BGSLIB	= ../bgslibrary
-FLAGS	+= -g -pg -Wall -Ofast -mfpu=neon -funsafe-math-optimizations -fabi-version=8 -Wabi -march=armv7-a -fopenmp
+FLAGS	+= -Wall -O2 -mfpu=neon -funsafe-math-optimizations -fabi-version=8 -Wabi -march=armv7-a -fopenmp
 FLAGS	+= -I. -I.. -I../bgslibrary -I/usr/local/cuda-6.5/targets/armv7-linux-gnueabihf/include
 FLAGS	+= -DHAVE_OPENCV_GPU -DHAVE_CUDA
 CFLAGS	+= $(FLAGS) -Wno-unused-but-set-variable
 CXXFLAGS	+= $(FLAGS) -std=c++11 -I$(BGSLIB) -Wno-unused-but-set-variable
-LDFLAGS	+= -g -O2
+LDFLAGS	+= -O2
 LDFLAGS += -L$(BGSLIB) -lbgslibrary
 LDFLAGS	+= -L../opencv2 -lopencv_nonfree
 LDFLAGS	+= -lglfw3 -lGLEW -lGL
@@ -64,7 +64,7 @@ all: $(TRG)
 #	$(CXX) $^ $(LDFLAGS) -o $@
 
 $(TRG): $(OBJ)
-	/usr/local/cuda-6.5/bin/nvcc -ccbin g++ -m32 -Xcompiler -mfloat-abi=hard -Xlinker --dynamic-linker=/lib/ld-linux-armhf.so.3 $^ $(LDFLAGS) -Xcompiler "-g -pg" -Xlinker "-g -pg" -o $@
+	/usr/local/cuda-6.5/bin/nvcc -ccbin g++ -m32 -Xcompiler -mfloat-abi=hard -Xlinker --dynamic-linker=/lib/ld-linux-armhf.so.3 $^ $(LDFLAGS) -o $@
 
 %.o: %.cu
 	/usr/local/cuda-6.5/bin/nvcc -ccbin g++ -m32 -Xcompiler "-g -pg" -Xcompiler -mfloat-abi=hard -po maxrregcount=16 $(GENCODE_FLAGS) -o $@ -c $<
