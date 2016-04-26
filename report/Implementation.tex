@@ -4,7 +4,7 @@
 
 \modc{\subsection{Hardware connection}}
 
-The Raspberry Pi camera module was connected to the Jetson TK1 board as shown \mdc{in} \fref{imp:schematic}\modc{ and \fref{imp:connection}}. A 74HCT245 bus transceiver chip was used as a buffer for voltage level conversion, since GPIOs on the Jetson board are using $1.8V$ voltage level while the Raspberry Pi module is working at $3.3V$ voltage level. \modc{The camera needs 2 discrete interfaces for control and communicate, I2C and MIPI-CSI. I2C interface is a relatively low speed interface with multi master and multi slave addressing support, is used to control and configure the camera. MIPI-CSI interface is a high speed data transmission interface designed for high resolution cameras, by having multiple differential data lanes to multiple maximum transmission speed. The camera uses 2 data lanes to transmit frame data and synchronise.}
+The Raspberry Pi camera module was connected to the Jetson TK1 board as shown \mdc{in} \fref{imp:schematic}\modc{ and \fref{imp:connection}}. A 74HCT245 bus transceiver chip was used as a buffer for voltage level conversion, since GPIOs on the Jetson board are using $1.8V$ voltage level while the Raspberry Pi module is working at $3.3V$ voltage level. \modc{The camera needs 2 discrete interfaces for control and \mdd{communication}, I2C and MIPI-CSI. I2C\mdd{, which is} a relatively low speed interface with multi master and multi slave addressing support, is used to control and configure the camera. MIPI-CSI is a high speed data transmission interface designed for high resolution cameras, by having multiple differential data lanes to multiple maximum transmission speed. The camera uses 2 data lanes to transmit frame data and synchronise.}
 
 \begin{figure}[htb]
   \centering
@@ -26,7 +26,7 @@ The GPIO on the camera module is controlling \mdc{an} LED mounted on the module,
 
 %{\color{red}Camera waveform.}
 
-\fref{imp:cam:osc} shows a detailed waveform captured using an oscilloscope during camera frame rate configuration. The camera resolution was configured to a higher resolution mode for 2 frames, then changed back. Frame data, line data, synchronisation packet and I2C transmissions are clearly marked on the waveform.
+\fref{imp:cam:osc} shows a detailed waveform captured using an oscilloscope during camera frame rate configuration. The camera was configured to a higher resolution mode for 2 frames, then changed back. Frame data, line data, synchronisation packet and I2C transmissions are clearly marked on the waveform.
 
 \begin{figure}[htb]
   \centering
@@ -336,7 +336,7 @@ Adaptive energy saving operation was done by varying input video stream frame ra
 \subsection{Parameter metrics}
 \label{imp:ada:metric}
 
-For it to work optimistically in a particular scenario, a few parameter metrics are required, listed in \tref{imp:ada:par}.
+\mdd{A few parameter metrics are required for an \modd{optimal} performance in a particular scenario. They are} listed in \tref{imp:ada:par}.
 
 \begin{table}[H]
   \centering
@@ -358,9 +358,9 @@ For it to work optimistically in a particular scenario, a few parameter metrics 
 
 The basic one is the maximum possible moving speed of any objects and parts of objects in the scenario. It is used to determine all other parameters.
 
-Typical object sizes, distances between objects and active area masks are used to optimise foreground mask filtering, so that noises and movements caused by other unrelated objects and noises can be filtered out as much as possible. They are irrelevant to the optical flow tracking algorithm, because the algorithm is tracking feature points around blobs not shapes of blobs.
+Typical object sizes, distances between objects and active area masks are used to optimise foreground mask filtering, so that noises and movements caused by other unrelated objects can be filtered out as much as possible. They are irrelevant to the optical flow tracking algorithm, because the algorithm is tracking feature points around blobs \mdd{rather than} shapes of blobs.
 
-The minimum frame rate is determined as shown by \eref{f_min}, so that movement of any object will not overtake the tracking window, therefore most likely keep been tracked. It is also limited by minimum response rate required in an application.
+The minimum frame rate is determined by \eref{f_min}, so that movement of any object will not overtake the tracking window, therefore most likely keep \mdd{being} tracked. It is also limited by minimum response rate required in an application.
 
 \begin{equation}
 	f_{min} = \frac{\text{Maximum object speed}}{\text{Optical flow optimum tracking length}}
@@ -371,7 +371,7 @@ The maximum frame rate is only limited by algorithm computation speed and hardwa
 
 \subsection{Frame rate adaptation}
 
-Having calculated the maximum movement distance of feature points between adjacent frames, the frame rate is then calculated as \eref{f_rate}. The frame interval will then be adjusted according to this by the main thread.
+Having calculated the maximum movement distance of feature points between adjacent frames, the frame rate is then calculated \mdd{by} \eref{f_rate}. The frame interval will then be adjusted according to this by the main thread.
 
 \begin{equation}
 	f = \frac{\text{Maximum movement distance}}{\text{Optical flow optimum tracking length} \times \text{Time between frames}}
@@ -380,7 +380,7 @@ Having calculated the maximum movement distance of feature points between adjace
 
 %{\color{red}Implementation? BOOM}
 
-\fref{imp:ada:ex} shows a sequence of frames evaluated from the CDNET baseline highway dataset. The frame indices are not continuous due to the adaptive operation applied. It can be seen from the sequence of frames that the change of frame rate (\fref{imp:ada:ex:part}) is clearly related to the speeds of objects. The maximum object travelling distances between frames evaluated indicated by the green lines are almost the same.
+\fref{imp:ada:ex} shows a sequence of frames evaluated from the CDNET baseline highway dataset. The frame indices are not continuous due to the adaptive operation applied. It can be seen from the sequence of frames that the change of frame rate (\fref{imp:ada:ex:part}) is clearly related to the speeds of objects. \modd{The maxima of object travelling distances indicated by the green lines are almost the same.}
 
 \begin{figure*}[htb]
   \centering
@@ -410,6 +410,6 @@ Having calculated the maximum movement distance of feature points between adjace
 
 %\todo{Update the frames}
 
-The changes of frame rate through the entire dataset are shown in \fref{imp:ada:ex:all}. Most of the time frame rate is below 10 FPS, results in only 274 out of 1700 frames in the dataset been evaluated, saves a lot of computation.
+The changes of frame rate through the entire dataset are shown in \fref{imp:ada:ex:all}. Most of the time frame rate is below 10 FPS, \mdd{resulting} in only 274 out of 1700 frames in the dataset \mdd{being} evaluated\mdd{. This} saves a lot of computation.
 
 %\section{Video stream dataset}

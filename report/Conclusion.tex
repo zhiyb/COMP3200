@@ -8,26 +8,26 @@ Several object detection and tracking algorithms were investigated.
 
 An application running adaptive object tracking algorithms was developed. The algorithms can run at 30 FPS as in specification. The effect of adaptive operation was investigated. All objects in the sample datasets get tracked regardless of whether the adaptive operation is applied or not.
 
-By applying adaptive operation, power consumption reduction estimation of $19 \%$ was achieved for varies video surveillance datasets. It was only $19 \%$, due to the high standby power consumption of the embedded development board. The adaptive operation still has an effect on power consumption, but was not very significant compare to standby power consumption.
+By applying adaptive operation, power consumption reduction estimation of $19 \%$ was achieved for \mdd{various} video surveillance datasets. It was only $19 \%$, due to the high standby power consumption of the embedded development board. The adaptive operation still has an effect on power consumption, but was not very significant \mdd{compared} to standby power consumption.
 
 %\todo{Power saving achieved.
 %Compare back to aims, specifications. (Why didn't?)}
 
 \section{Constraints}
 
-The algorithms used can only run at around 30 FPS maximum with $320 \times 240$ resolution. Objects moves faster than this, such as a basket ball may need a faster frame rate to be tracked. The maximum speed is also highly depending on the object to camera distance.
+The algorithms used can only run at around 30 FPS maximum with $320 \times 240$ resolution. Objects \mdd{which move} faster than this, such as a basket ball\mdd{,} may need a faster frame rate to be tracked. The maximum speed is also highly \mdd{dependent} on the object to camera distance.
 
-The algorithms implemented can only works with a steady background, limiting the application area to still camera application such as video surveillance.
+The algorithms implemented can only work with a steady background, limiting the application area to still camera application such as video surveillance.
 
 \section{Further work}
 
 \subsection{Camera driver}
 
-The camera driver in collaboration with NVIDIA's MIPI-CSI driver is not stable enough. In case the application that are using the camera being forced stopped by the user or due to a programming bug, the drivers may crash the kernel due to lost synchronisation. This need further investigation.
+The camera driver in collaboration with NVIDIA's MIPI-CSI driver is not stable enough. \modd{In case of the applications that use the camera} being forced stopped by the user or due to a programming bug, the drivers may crash the kernel due to \mdd{a loss in} synchronisation. This \mdd{needs} further investigation.
 
-When a buffer been marked as filled by the MIPI-CSI driver, it is actually still receiving data from the camera. Possible reasons are losing or misinterpreting synchronisation packets, camera configuration problem and bugs in MIPI-CSI driver implementation. A workaround was used, by receiving 2 filled buffers from the driver, then use the first one as valid data. However, this workaround gives 2 frames latency regardless of frame rate. This need further investigation.
+When a buffer \mdd{being} marked as filled by the MIPI-CSI driver, it is actually still receiving data from the camera. Possible reasons are losing or misinterpreting synchronisation packets, camera configuration problem and bugs in MIPI-CSI driver implementation. A workaround was used, by receiving 2 filled buffers from the driver, then use the first one as valid data. However, this workaround gives 2 frames latency regardless of frame rate. This \mdd{needs} further investigation.
 
-The driver interface for controlling the frame rate, configuring exposure settings etc. need to be completed and standardised.
+The driver interface for controlling the frame rate, configuring exposure settings etc. \mdd{needs} to be completed and standardised.
 
 The Tegra K1 CPU has a built-in ISP that can convert Bayer pattern to standard RGB format without using CPU or GPU time. However, the documentation of this feature is confidential. The NVIDIA's video interface driver that are using this ISP is also undocumented in public domain. Power consumption may be reduced further if the ISP can be used.
 
