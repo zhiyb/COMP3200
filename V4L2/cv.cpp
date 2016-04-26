@@ -118,9 +118,12 @@ void cvThread_CPU()
 #if 0
 			goodFeaturesToTrack(prev_grey, prevPts, 32, 0.1, 3, mask);
 #else
-			for (vector<Point> &points: *prev_contours)
+			for (vector<Point> &points: *prev_contours) {
+				if (cv::contourArea(points) < BLOB_SIZE * BLOB_SIZE)
+					continue;
 				for (Point &point: points)
 					prevPts.push_back(point);
+			}
 #endif
 			if (prevPts.size() > 0) {
 				vector<float> err;

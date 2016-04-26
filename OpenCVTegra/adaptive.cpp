@@ -7,7 +7,7 @@
 #include <opencv2/gpu/gpu.hpp>
 #include "opencv2/nonfree/gpu.hpp"
 
-#define DATASET	"dataset/baseline/PETS2006/"
+#define DATASET	"dataset/baseline/highway/"
 
 #define SHOW
 #define HALFSIZE
@@ -151,7 +151,7 @@ int main(int argc, char **argv)
 			/// Draw polygonal contour + bonding rects + circles
 			for (size_t i = 0; i < contours->size(); i++) {
 				// drop smaller blobs
-				if (cv::contourArea((*contours)[i]) < BLOB_SIZE)
+				if (cv::contourArea((*contours)[i]) < BLOB_SIZE * BLOB_SIZE)
 					continue;
 
 				//Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255));
@@ -168,9 +168,12 @@ int main(int argc, char **argv)
 #if 0
 			goodFeaturesToTrack(prev_grey, prevPts, 32, 0.1, 3, mask);
 #else
-			for (vector<Point> &points: *prev_contours)
+			for (vector<Point> &points: *prev_contours) {
+				if (cv::contourArea(points) < BLOB_SIZE * BLOB_SIZE)
+					continue;
 				for (Point &point: points)
 					prevPts.push_back(point);
+			}
 #endif
 			if (prevPts.size() > 0) {
 				vector<float> err;
