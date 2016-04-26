@@ -8,7 +8,7 @@
 // Time to transmit 1 line data (us)
 #define CAM_LINEITVL	20.645f
 // Maximum frame lines change rate
-#define CAM_CHANGE	0x40
+#define CAM_CHANGE	0x60
 
 #define FPS_MAX	30.f
 #define FPS_MIN	5.2f
