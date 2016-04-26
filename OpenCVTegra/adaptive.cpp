@@ -7,10 +7,10 @@
 #include <opencv2/gpu/gpu.hpp>
 #include "opencv2/nonfree/gpu.hpp"
 
-#define DATASET	"dataset/baseline/highway/"
+#define DATASET	"dataset/dynamicBackground/overpass/"
 
 #define SHOW
-#define HALFSIZE
+//#define HALFSIZE
 #define ADAPTIVE
 #define BLOB_SIZE	8
 #define OF_SIZE		32
@@ -254,7 +254,7 @@ int main(int argc, char **argv)
 #ifdef ADAPTIVE
 		cout << "Max distance: " << dismax << ",\tfps: " << fps;
 		cout << ",\tactual fps: " << fps_actual << ",\tincrement: " << inc << endl;
-		oflog << frameNumber << "," << dismaxp.x << "," << dismaxp.y << "," << dismax;
+		oflog << frameNumber << "," << dismaxp.x << "," << dismaxp.y << "," << dismax << ",";
 		oflog << fps << "," << fps_actual << "," << inc << endl;
 #else
 		cout << "Max distance: " << dismax << endl;
