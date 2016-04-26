@@ -52,17 +52,21 @@ unsigned int readRegister(const bool word, const unsigned int addr, const bool p
 	return val;
 }
 
-unsigned int setFPS(float fps)
+unsigned int setFPS(float fps, bool limit)
 {
 	static unsigned int lines_prev = CAM_LINES;
 	fps = max(fps, FPS_MIN);
 	fps = min(fps, FPS_MAX);
 	unsigned int lines = round((1.f / fps * 1000.f - CAM_ITVL) / CAM_LINEITVL * 1000.f + CAM_LINES);
-	if (abs(lines - lines_prev) > CAM_CHANGE)
-		lines = lines > lines_prev ? lines_prev + CAM_CHANGE : lines_prev - CAM_CHANGE;
+	if (limit) {
+		unsigned int change = lines_prev / 0x12;// CAM_CHANGE;
+		if (abs(lines - lines_prev) > change)
+			lines = lines > lines_prev ? lines_prev + change : lines_prev - change;
+	}
 	lines_prev = lines;
 	// Total lines
 	writeRegister(true, 0x380e, lines);
+	//clog << fps << ": " << lines << endl;
 	return lines;
 }
 
@@ -109,7 +113,7 @@ loop:
 			cout << " CV CPU: " << status.cvFPS_CPU << endl;
 			cout << "CV disp: " << status.cvFPS_disp << endl;
 		} else {
-			unsigned int l = setFPS(e);
+			unsigned int l = setFPS(e, false);
 			cout << "Set camera FPS: " << e << endl;
 			cout << " Output liness: " << l << endl;
 		}

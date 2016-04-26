@@ -104,7 +104,7 @@ void cvThread();
 void pvThread();
 void writeRegister(const bool word, const unsigned int addr, const unsigned int value);
 unsigned int readRegister(const bool word, const unsigned int addr, const bool print = false);
-unsigned int setFPS(float fps);
+unsigned int setFPS(float fps, bool limit = true);
 void fixed(const bool e);
 
 #endif

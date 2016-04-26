@@ -48,7 +48,9 @@ void cvThread_CPU()
 	Mat grey_prev, drawing;
 	vector<vector<Point> > *prev_contours = 0;
 
+#ifdef ADAPTIVE
 	float fps = FPS_MAX;
+#endif
 	int64_t past = getTickCount(), count = 0;
 	uint64_t ts, ts_prev = 0;
 	unsigned long frameCount = 0;
@@ -65,7 +67,9 @@ void cvThread_CPU()
 		if (input.empty())
 			continue;
 
+#ifdef ADAPTIVE
 		float itvl = (float)(ts - ts_prev) / (float)cv::getTickFrequency();
+#endif
 		ts_prev = ts;
 #if 0
 		if (status.cvShow) {
