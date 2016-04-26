@@ -117,7 +117,7 @@ Finally, \mdc{there is} an input \mdc{handling} thread for debugging and control
 
 A simple implementation of colour filtering object detection algorithm \cite{MOTBOC.git} was investigated, as shown in \fref{imp:MOTBOC}.
 
-\todo{However, this implementation is very limited, it can only \mdc{detect} objects with single colour, \modc{and it} cannot distinguish the objects from similar background colour, relies heavily on manually adjusted colour threshold values, very sensitive to the variations of colour from different cameras and environment lighting conditions, therefore not very adaptable.} A complex environment may also \mdc{result in} undesired detections, as shown in \fref{imp:MOTBOC_F}. Background objects that \mdc{have a} similar colour to the desired red objects were detected as foreground red objects, and some target objects were not been identified and misclassified because of \mdc{a} slight change in \mdc{the} lighting condition, the objects' colour seen by the camera \mdc{was} no longer inside the colour filters' ranges.
+\modc{However, this implementation is very limited. It can only \mdc{detect} objects with single colour, \modc{and it} cannot distinguish the objects from similar background colour. It also relies heavily on manually adjusted colour threshold values for the target model. As a result, this algorithm is very sensitive to the variations of colour from different cameras and environment lighting conditions. Therefore this is not a very adaptable algorithm.} \modc{For example, a} complex environment \modc{that results in} undesired detections \modc{is} shown in \fref{imp:MOTBOC_F}. Background objects that \mdc{have a} similar colour to the desired red objects were detected as foreground red objects\modc{. Some} target objects were not been identified and misclassified because of \mdc{a} slight change in \mdc{the} lighting condition, the objects' colour seen by the camera \mdc{was} no longer inside the colour filters' ranges.
 
 \begin{figure}[H]
   \centering
@@ -384,18 +384,18 @@ Having calculated the maximum movement distance of feature points between adjace
 
 \begin{figure*}[htb]
   \centering
-  \subfigure[Frame 1566]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001566_drawing}}
-  \subfigure[Frame 1581]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001581_drawing}}
-  \subfigure[Frame 1596]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001596_drawing}}
-  \subfigure[Frame 1611]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001611_drawing}}
+  \subfigure[Frame 1602]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001602_drawing}}
+  \subfigure[Frame 1608]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001608_drawing}}
+  \subfigure[Frame 1614]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001614_drawing}}
+  \subfigure[Frame 1620]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001620_drawing}}
   \subfigure[Frame 1626]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001626_drawing}}
-  \subfigure[Frame 1636]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001636_drawing}}
+  \subfigure[Frame 1632]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001632_drawing}}
+  \subfigure[Frame 1638]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001638_drawing}}
   \subfigure[Frame 1644]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001644_drawing}}
-  \subfigure[Frame 1649]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001649_drawing}}
+  \subfigure[Frame 1648]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001648_drawing}}
+  \subfigure[Frame 1651]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001651_drawing}}
   \subfigure[Frame 1654]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001654_drawing}}
-  \subfigure[Frame 1658]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001658_drawing}}
-  \subfigure[Frame 1661]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001661_drawing}}
-  \subfigure[Frame 1665]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001665_drawing}}
+  \subfigure[Frame 1656]{\includegraphics[width=0.23\columnwidth]{adaptive/example/001656_drawing}}
   \subfigure[Changes of frame rate through the sequence shown above]{
     \includegraphics[width=0.7\columnwidth]{adaptive/example/fps_part}
     \label{imp:ada:ex:part}
@@ -408,7 +408,7 @@ Having calculated the maximum movement distance of feature points between adjace
   \label{imp:ada:ex}
 \end{figure*}
 
-\todo{Update the frames}
+%\todo{Update the frames}
 
 The changes of frame rate through the entire dataset are shown in \fref{imp:ada:ex:all}. Most of the time frame rate is below 10 FPS, results in only 274 out of 1700 frames in the dataset been evaluated, saves a lot of computation.
 
