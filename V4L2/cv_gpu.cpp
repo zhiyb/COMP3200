@@ -1,9 +1,14 @@
 #include <thread>
+#include <fstream>
 #include <opencv2/opencv.hpp>
 #include <opencv2/gpu/gpu.hpp>
 #include "opencv2/nonfree/gpu.hpp"
 #include "global.h"
 #include "cv_private.h"
+
+//#define PROOFING
+//#define PROOFING_MEM
+//#define CPUIMP
 
 using namespace std;
 using namespace cv;
@@ -23,11 +28,16 @@ void cvThread()
 
 #if 1
 	float sizef = 0.5f;
+#ifdef CPUIMP
+	Mat raw, rawu8, img_orig;
+	gpu::GpuMat img_gpu;
+#else
 	gpu::GpuMat raw(status.height, status.width, CV_16UC1);
 	gpu::GpuMat rawu8(status.height, status.width, CV_8UC1);
 	gpu::GpuMat img_orig(status.height, status.width, CV_8UC3);
 	gpu::GpuMat img(status.height * sizef, status.width * sizef, CV_8UC3);
 	gpu::GpuMat img_grey(status.height * sizef, status.width * sizef, CV_8UC1);
+#endif
 #if 0
 	gpu::GpuMat *img_s = new gpu::GpuMat(status.height / 2, status.width / 2, CV_8UC3);
 #endif
@@ -45,19 +55,42 @@ void cvThread()
 	cvData.mtx.lock();
 	cvData.mtx.unlock();
 
+#ifdef PROOFING
+	ofstream oflog("logging.log");
+#endif
 	int64_t past = getTickCount(), count = 0;
+#ifdef PROOFING
+	uint64_t start, stop, elapsed;
+#endif
 	unsigned long frameCount = 0;
 	for (;;) {
+#ifdef PROOFING
+		elapsed = 0;
+#endif
 		cvData.mtx.lock();
 		cvData.bufidx = bufidx;
 		cvData.mtx.unlock();
 		cv_gpu.ts = timestamps[bufidx];
+#ifdef PROOFING
+		start = getTickCount();
+#endif
 #if 1
 		if (++frameCount >= 10) {
+#ifdef CPUIMP
+			raw = Mat(status.height, status.width, CV_16UC1, dev.buffers[cvData.bufidx].mem);
+			raw.convertTo(rawu8, CV_8UC1, 1.f / 4.f);
+#else
 			raw.upload(Mat(status.height, status.width, CV_16UC1, dev.buffers[cvData.bufidx].mem));
+#endif
 			if (raw.empty())
 				break;
 		}
+#ifdef PROOFING
+#if defined(PROOFING_MEM) || defined(CPUIMP)
+		stop = getTickCount();
+		elapsed += stop - start;
+#endif
+#endif
 #if 1
 		cvData.mtx.lock();
 		cvData.bufidx = -1;
@@ -69,12 +102,25 @@ void cvThread()
 		if (frameCount < 10)
 			continue;
 
+#ifdef PROOFING
+		start = getTickCount();
+#endif
+#ifdef CPUIMP
+		Mat img, img_grey;
+		cvtColor(rawu8, img_orig, CV_BayerBG2RGB);
+		resize(img_orig, img, Size(), sizef, sizef);
+		cvtColor(img, img_grey, CV_RGB2GRAY);
+		GaussianBlur(img, img, Size(3, 3), 1.5);
+#else
 		raw.convertTo(rawu8, CV_8UC1, 1.f / 4.f);
 		gpu::cvtColor(rawu8, img_orig, CV_BayerBG2RGB);
 		gpu::resize(img_orig, img, Size(), sizef, sizef);
 		gpu::cvtColor(img, img_grey, CV_RGB2GRAY);
-#if 1
 		gpu::GaussianBlur(img, img, Size(3, 3), 1.5);
+#endif
+#ifdef PROOFING
+		stop = getTickCount();
+		elapsed += stop - start;
 #endif
 #if 0
 		gpu::resize(*img, *img_s, Size(), 0.5, 0.5);
@@ -95,15 +141,43 @@ void cvThread()
 		// by default, it shows automatically the foreground mask image
 		bgs->process(img_input, img_mask, img_bkgmodel);
 #else
+#ifdef CPUIMP
+#ifdef PROOFING
+		start = getTickCount();
+#endif
+		img_gpu.upload(img);
+#ifdef PROOFING
+#if defined(PROOFING_MEM) || defined(CPUIMP)
+		stop = getTickCount();
+		elapsed += stop - start;
+#endif
+#endif
+		vibe(img_gpu, fgmask);
+#else
 		vibe(img, fgmask);
+#endif
 #if 0
 		gpu::blur(*fgmask, *fgmask, Size(5, 5));
 #endif
 #if 1
 		Mat input, grey, mask;
 		fgmask.download(mask);
+#ifdef PROOFING
+		start = getTickCount();
+#endif
+#ifdef CPUIMP
+		input = img;
+		grey = img_grey;
+#else
 		img.download(input);
 		img_grey.download(grey);
+#endif
+#ifdef PROOFING
+#if defined(PROOFING_MEM) || defined(CPUIMP)
+		stop = getTickCount();
+		elapsed += stop - start;
+#endif
+#endif
 #if 1
 		locker = cv_gpu.smpr.lock();
 		cv_gpu.input = input;
@@ -120,6 +194,10 @@ void cvThread()
 		if (status.cvShow)
 			imshow("mask", img_mask);
 #endif
+#endif
+
+#ifdef PROOFING
+		oflog << ((float)elapsed / (float)getTickFrequency()) << endl;
 #endif
 
 		count++;
