@@ -30,7 +30,7 @@ Another important constraint is the frame rate cannot be changed drastically. Wh
 
 %\todo{BOOM}
 
-\todo{Oscilloscope waveform of frame rate changing.}
+%\todo{Oscilloscope waveform of frame rate changing.}
 
 %\section{\todo{Object tracking algorithms}}
 
@@ -93,7 +93,12 @@ Some properties of the dataset under test need to be determined first, such as m
 
 Moving blobs that are continuously connected by the tracking algorithm across frames were considered as being tracked. The speed of objects moving in the datasets are relatively low to the frame rate, all the objects in the datasets evaluated are considered as being tracked regardless of adaptive operation.
 
-By applying the power consumption model, the power consumption reduction can be estimated, summarised in \fref{ana:summary}.
+By applying the power consumption model, the power consumption reduction can be estimated, as shown by \eref{ana:eq:power}. The results are summarised in \fref{ana:summary}.
+
+\begin{equation}
+	E = \sum_{n=1}^{N} P \times t = \sum_{n=1}^{N} \frac{\text{Power consumption at this frame rate}}{\text{Frame rate at} n}
+	\label{ana:eq:power}
+\end{equation}
 
 \begin{figure}[htb]
   \centering
