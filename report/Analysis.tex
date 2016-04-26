@@ -26,9 +26,11 @@ To verify the equation, the transmission times of an entire frame and individual
 
 However, when experimenting with changing frame rate, a software constraint was discovered. The MIPI-CSI driver developed by NVIDIA can only effectively handle frame rates equal or higher than 5 FPS. For frame rates less than 5 FPS, the camera still functioning as expected, but the driver will be desynchronised. Almost half of frames transmitted from the camera will be lost. As a result, the adaptive operation should not run below 5 FPS.
 
-Another important constraint is the frame rate cannot be changed drastically. When changing the frame interval, camera sensor exposure time, gain control and white balance need to be adjusted at the same time. This is handled by the automatic exposure, gain and white balance adjustment functions on the image sensor processor (ISP) inside camera sensor. The automatic adjustments were implemented with a feedback loop approach. Consequently, when changing the frame interval drastically, the adjustments needed are also significant. As a result, the first few frames captured after such a change will be significantly different from previous frames in brightness and white balance. That is enough to confuse the object tracking algorithms. A software limitation of frame interval changing rate was therefore added in the application.
+Another important constraint is the frame rate cannot be changed drastically. When changing the frame interval, camera sensor exposure time, gain control and white balance need to be adjusted at the same time. This is handled by the automatic exposure, gain and white balance adjustment functions on the image sensor processor (ISP) inside camera sensor. The automatic adjustments were implemented with a feedback loop approach. Consequently, when changing the frame interval drastically, the adjustments needed are also significant. As a result, the first few frames captured after such a change will be significantly different from previous frames in brightness and white balance. That is enough to confuse the object tracking algorithms. A software limitation of frame interval changing rate was therefore added in the application. This may be resolved by using software compensation algorithm, but it will required lots of investigations, not possible at this time.
 
 %\todo{BOOM}
+
+\todo{Oscilloscope waveform of frame rate changing.}
 
 \section{\todo{Object tracking algorithms}}
 
@@ -89,13 +91,13 @@ Some properties of the dataset under test need to be determined first, such as m
   \label{ana:ada}
 \end{figure}
 
+Moving blobs that are continuously connected by the tracking algorithm across frames were considered as being tracked. The speed of objects moving in the datasets are relatively low to the frame rate, all objects in the datasets evaluated are considered as being tracked regardless of adaptive operation.
+
 By applying the power consumption model, \todo{the power consumption reduction can be estimated}, summarised in \tref{ana:summary}.
 
 \begin{figure}[htb]
   \centering
   \includegraphics[width=\columnwidth]{ana_summary}
-  \caption{Summary of evaluated CDNET datasets.}
+  \caption{Summary of evaluated CDNET datasets. \todo{UPDATE!}}
   \label{ana:summary}
 \end{figure}
-
-\todo{Oscilloscope waveform.}
