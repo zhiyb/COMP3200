@@ -2,8 +2,16 @@
 
 \section{Achievements}
 
-\todo{Power saving achieved.
-Compare back to aims, specifications. (Why didn't?)}
+The camera driver was successfully developed, and was able to configure the camera sensor, capture still images and video streams.
+
+Several object detection and tracking algorithms were investigated.
+
+An application running adaptive object tracking algorithms was developed. The algorithms can run at 30 FPS as in specification. The effect of adaptive operation was investigated. All objects in the sample datasets get tracked regardless of whether the adaptive operation is applied or not.
+
+By applying adaptive operation, power consumption reduction estimation of $19 \%$ was achieved for varies video surveillance datasets. It was only $19 \%$, due to the high standby power consumption of the embedded development board. The adaptive operation still has an effect on power consumption, but was not very significant compare to standby power consumption.
+
+%\todo{Power saving achieved.
+%Compare back to aims, specifications. (Why didn't?)}
 
 \section{Constraints}
 
@@ -41,4 +49,6 @@ More algorithms may be investigated. Especially algorithms that handle backgroun
 
 \section{Evaluation}
 
-\todo{Difficulties, solutions etc.}
+During implementation, I found that I spent a lot time trying to stabilise the camera driver to prefect. That is not the main goal of the project, the camera driver was actually usable for algorithm analysis. Therefore I chose to accept the problems with the drivers, and moved the diagnosis works to further work.
+
+%\todo{Difficulties, solutions etc.}
