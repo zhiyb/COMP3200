@@ -7,8 +7,6 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include <opencv/highgui.h>
-
 #include "helper.h"
 #include "global.h"
 
@@ -24,14 +22,14 @@ struct thread_t pvData;
 static unsigned int texture;
 static map<string, GLint> location;
 
-void refreshCB(GLFWwindow *window)
+static void refreshCB(GLFWwindow *window)
 {
 	int width, height;
 	glfwGetWindowSize(window, &width, &height);
 	glViewport(0, 0, width, height);
 }
 
-void keyCB(GLFWwindow * /*window*/, int key, int /*scancode*/, int action, int /*mods*/)
+static void keyCB(GLFWwindow * /*window*/, int key, int /*scancode*/, int action, int /*mods*/)
 {
 	if (action != GLFW_PRESS && action != GLFW_REPEAT)
 		return;
@@ -47,7 +45,7 @@ void keyCB(GLFWwindow * /*window*/, int key, int /*scancode*/, int action, int /
 	}
 }
 
-void setupVertices()
+static void setupVertices()
 {
 	static const vec2 vertices[4] = {{1.f, 1.f}, {1.f, -1.f}, {-1.f, -1.f}, {-1.f, 1.f}};
 
@@ -63,7 +61,7 @@ void setupVertices()
 	glVertexAttribPointer(location["position"], 2, GL_FLOAT, GL_FALSE, 0, 0);
 }
 
-void getUniforms(GLuint program, const char **uniforms)
+static void getUniforms(GLuint program, const char **uniforms)
 {
 	if (!program)
 		return;
@@ -149,16 +147,15 @@ void pvThread()
 	pvData.mtx.unlock();
 
 	// FPS counter
-	uint64_t ts, ts_prev = 0;
+	float past = glfwGetTime();
+	unsigned int count = 0;
 
 	/* Loop until the user closes the window */
-	int64_t past = cv::getTickCount();
 	while (!glfwWindowShouldClose(window) && status.request != REQUEST_QUIT) {
 		//dev.buffers[buf.index].mem, buf.bytesused;
 		pvData.mtx.lock();
 		pvData.bufidx = bufidx;
 		pvData.mtx.unlock();
-		ts = timestamps[bufidx];
 		glBufferSubData(GL_PIXEL_UNPACK_BUFFER, 0, status.width * status.height * 2, dev.buffers[pvData.bufidx].mem);
 		pvData.mtx.lock();
 		pvData.bufidx = -1;
@@ -172,15 +169,15 @@ void pvThread()
 		/* Swap front and back buffers */
 		glfwSwapBuffers(window);
 
-		float fps =  (float)cv::getTickFrequency() / (float)(ts - ts_prev);
-		ts_prev = ts;
-		status.pvFPS = fps;
-
-		int64_t now = cv::getTickCount();
-		if (now - past > 0.5f * cv::getTickFrequency()) {
+		count++;
+		float now = glfwGetTime();
+		if (now - past > 3) {
+			float fps = (float)count / (now - past);
+			status.pvFPS = fps;
 			char buf[32];
 			sprintf(buf, "%g FPS", fps);
 			glfwSetWindowTitle(window, buf);
+			count = 0;
 			past = now;
 		}
 

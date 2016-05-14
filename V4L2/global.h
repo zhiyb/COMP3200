@@ -7,7 +7,7 @@
 #include "ov5647_v4l2.h"
 
 // Preview
-#define ENABLE_PV	1
+#define ENABLE_PV	0
 // OpenCV
 #define ENABLE_CV	1
 

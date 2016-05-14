@@ -25,6 +25,7 @@ void cvThread()
 		return;
 	}
 	gpu::setDevice(0);
+	cv_gpu.raw = malloc(status.height * status.width * 2);
 
 #if 1
 	float sizef = 0.5f;
@@ -76,22 +77,26 @@ void cvThread()
 #endif
 #if 1
 		if (++frameCount >= 10) {
+			void *mem = dev.buffers[cvData.bufidx].mem;
+			memcpy(cv_gpu.raw, mem, status.width * status.height * 2);
+			mem = cv_gpu.raw;
 #ifdef CPUIMP
-			raw = Mat(status.height, status.width, CV_16UC1, dev.buffers[cvData.bufidx].mem);
+			raw = Mat(status.height, status.width, CV_16UC1, mem);
 			raw.convertTo(rawu8, CV_8UC1, 1.f / 4.f);
 #else
-			raw.upload(Mat(status.height, status.width, CV_16UC1, dev.buffers[cvData.bufidx].mem));
+			raw.upload(Mat(status.height, status.width, CV_16UC1, mem));
 #endif
 			if (raw.empty())
 				break;
 		}
+		cvData.bufidx = -1;
 #ifdef PROOFING
 #if defined(PROOFING_MEM) || defined(CPUIMP)
 		stop = getTickCount();
 		elapsed += stop - start;
 #endif
 #endif
-#if 1
+#if 0
 		cvData.mtx.lock();
 		cvData.bufidx = -1;
 		cvData.mtx.unlock();

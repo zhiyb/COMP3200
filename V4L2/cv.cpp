@@ -6,13 +6,60 @@
 #include "camera.h"
 #include "cv_private.h"
 
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/constants.hpp>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+#include "helper.h"
+
 #define ADAPTIVE
-#define MOVE_MAX	64
+#define MOVE_MAX	32
 #define BLOB_SIZE	7
 #define OF_SIZE		32
 
+#define FILE_VERTEX_SHADER	"cv.vert"
+#define FILE_FRAGMENT_SHADER	"cv.frag"
+
 using namespace std;
+using namespace glm;
 using namespace cv;
+
+static map<string, GLint> location;
+
+static void refreshCB(GLFWwindow *window)
+{
+	int width, height;
+	glfwGetWindowSize(window, &width, &height);
+	glViewport(0, 0, width, height);
+}
+
+static void setupVertices()
+{
+	static const vec2 vertices[4] = {{1.f, 1.f}, {1.f, -1.f}, {-1.f, -1.f}, {-1.f, 1.f}};
+
+	GLuint vao;
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
+	GLuint bVertex;
+	glGenBuffers(1, &bVertex);
+	glBindBuffer(GL_ARRAY_BUFFER, bVertex);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), (void *)vertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(location["position"]);
+	glVertexAttribPointer(location["position"], 2, GL_FLOAT, GL_FALSE, 0, 0);
+}
+
+static void getUniforms(GLuint program, const char **uniforms)
+{
+	if (!program)
+		return;
+	while (*uniforms) {
+		location[*uniforms] = glGetUniformLocation(program, *uniforms);
+		uniforms++;
+	}
+}
 
 void maskEnhance(Mat mask)
 {
@@ -43,9 +90,82 @@ void maskEnhance(Mat mask)
 // OpenCV CPU post processing
 void cvThread_CPU()
 {
+	GLFWwindow *window;
+	/* Initialize the library */
+	if (!glfwInit()) {
+		return;
+	}
+
+	/* Create a windowed mode window and its OpenGL context */
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+	window = glfwCreateWindow(status.width * 2, status.height * 2, "Hello World", NULL, NULL);
+	glfwSetWindowPos(window, 0, 0);
+	if (!window) {
+		glfwTerminate();
+		return;
+	}
+
+	/* Make the window's context current */
+	glfwMakeContextCurrent(window);
+	glfwSwapInterval(2);
+	glewExperimental = GL_TRUE;
+	glewInit();
+	glEnable(GL_TEXTURE_2D);
+
+	GLuint program;
+	shader_t shaders[] = {
+		{GL_VERTEX_SHADER, FILE_VERTEX_SHADER},
+		{GL_FRAGMENT_SHADER, FILE_FRAGMENT_SHADER},
+		{0, NULL}
+	};
+
+	/* Setup render program */
+	program = setupProgramFromFiles(shaders);
+	if (program == 0) {
+		glfwTerminate();
+		return;
+	}
+	glUseProgram(program);
+	location["position"] = glGetAttribLocation(program, "position");
+	static const char *uniforms[] = {"sampler", "drawing", 0};
+	getUniforms(program, uniforms);
+
+	glUniform1i(location["sampler"], 0);
+	glUniform1i(location["drawing"], 1);
+
+	// Texture
+#if 0
+	GLuint pbo;
+	glGenBuffers(1, &pbo);
+	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
+	glBufferData(GL_PIXEL_UNPACK_BUFFER, status.width * status.height * 2, 0, GL_DYNAMIC_READ);
+#endif
+	const int texcnt = 2;
+	GLuint texture[texcnt];
+	//glActiveTexture(GL_TEXTURE0);
+	glGenTextures(texcnt, texture);
+	for (int i = 0; i != texcnt; i++) {
+		glBindTexture(GL_TEXTURE_2D, texture[i]);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+		//glTexStorage2D(GL_TEXTURE_2D, 1, GL_R16UI, status.width, status.height);
+	}
+
+	setupVertices();
+
+	glfwSetWindowRefreshCallback(window, refreshCB);
+
+	// OpenCV
 	std::unique_lock<std::mutex> locker;
 
-	Mat grey_prev, drawing;
+	Mat grey_prev;//, drawing;
+	float sizef = 0.5f;
+	Mat drawing(status.height * sizef, status.width * sizef, CV_8UC3);
 	vector<vector<Point> > *prev_contours = 0;
 
 #ifdef ADAPTIVE
@@ -55,14 +175,21 @@ void cvThread_CPU()
 	uint64_t ts, ts_prev = 0;
 	unsigned long frameCount = 0;
 	while (1) {
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture[0]);
 		locker = cv_gpu.smpr.lock();
 		cv_gpu.smpr.wait(locker);
 		ts = cv_gpu.ts;
 		Mat input(cv_gpu.input);
 		Mat mask(cv_gpu.mask);
 		Mat grey(cv_gpu.grey);
+		//glBufferSubData(GL_PIXEL_UNPACK_BUFFER, 0, status.width * status.height * 2, cv_gpu.raw);
+		//glBufferData(GL_PIXEL_UNPACK_BUFFER, status.width * status.height * 2, cv_gpu.raw, GL_DYNAMIC_READ);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_R16UI, status.width, status.height, 0, GL_RED_INTEGER, GL_UNSIGNED_SHORT, cv_gpu.raw);
+		//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, status.width, status.height, GL_RED_INTEGER,
+		//		GL_UNSIGNED_SHORT, 0);
 		cv_gpu.smpr.unlock(locker);
-		if (status.request & REQUEST_QUIT)
+		if (glfwWindowShouldClose(window) || status.request == REQUEST_QUIT)
 			break;
 		if (input.empty())
 			continue;
@@ -72,7 +199,7 @@ void cvThread_CPU()
 #endif
 		ts_prev = ts;
 #if 0
-		if (status.cvShow) {
+		if (status.cvShow) {d
 			imshow("input", input);
 			//imshow("grey", grey);
 			//imshow("mask", mask);
@@ -85,12 +212,15 @@ void cvThread_CPU()
 		Mat grey_masked;
 		grey.copyTo(grey_masked, mask);
 
+#if 0
 		if (status.cvShow) {
 			imshow("input OF", grey_masked);
 		}
+#endif
 
 		// Extract contours
-		input.copyTo(drawing);
+		//input.copyTo(drawing);
+		drawing = Scalar(0);
 		vector<vector<Point> > *contours = new vector<vector<Point> >;
 #if 1
 		{
@@ -102,7 +232,7 @@ void cvThread_CPU()
 			/// Approximate contours to polygons + get bounding rects and circles
 			vector<vector<Point> > contours_poly(contours->size());
 
-			/// Draw polygonal contour + bonding rects + circles
+			/// Draw polygonal contour + bonding rects +d circles
 			for (size_t i = 0; i < contours->size(); i++) {
 				// drop smaller blobs
 				if (cv::contourArea((*contours)[i]) < BLOB_SIZE)
@@ -168,19 +298,30 @@ void cvThread_CPU()
 			}
 		}
 
+#if 0
 		if (status.cvShow) {
 			imshow("output OF", drawing);
 		}
-
+#endif
 #ifdef ADAPTIVE
 		// Adaptive FPS calculation
 		fps = dismax / itvl / (float)OF_SIZE;
-		fps = max(fps, (float)FPS_MIN);
-		fps = min(fps, (float)FPS_MAX);
+		fps = std::max(fps, (float)FPS_MIN);
+		fps = std::min(fps, (float)FPS_MAX);
 		//cout << fps << endl;
 		setFPS(fps);
 #endif
 
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, texture[1]);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, status.width * sizef, status.height * sizef, 0, GL_RGB, GL_UNSIGNED_BYTE, drawing.data);
+		/*glBufferSubData(GL_PIXEL_UNPACK_BUFFER, 0, status.width * status.height * 2, drawing.data);
+		glActiveTexture(GL_TEXTURE1);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, status.width, status.height, GL_RED_INTEGER,
+				GL_UNSIGNED_SHORT, 0);*/
+
+		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+		glfwSwapBuffers(window);
 		count++;
 		frameCount++;
 		int64_t now = getTickCount();
@@ -189,10 +330,16 @@ void cvThread_CPU()
 			status.cvFPS_disp = status.cvFPS_CPU = fps;
 			count = 0;
 			past = now;
+			char buf[32];
+			sprintf(buf, "%g FPS", fps);
+			glfwSetWindowTitle(window, buf);
 		}
 
+#if 0
 		if (status.cvShow && waitKey(1) >= 0)
 			break;
+#endif
+		glfwPollEvents();
 	}
 	status.request = REQUEST_QUIT;
 	delete prev_contours;

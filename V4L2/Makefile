@@ -73,6 +73,7 @@ $(TRG): $(OBJ)
 .PHONY: run
 run: $(TRG)
 	sync
+	sudo ~/kernel/modprobe_reset.sh
 	DISPLAY=:0 ./$(TRG) $(DEV) $(RES)
 
 .PHONY: clean
