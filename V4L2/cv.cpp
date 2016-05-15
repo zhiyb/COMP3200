@@ -109,7 +109,7 @@ void cvThread_CPU()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-	window = glfwCreateWindow(status.width, status.height, "Hello World", NULL, NULL);
+	window = glfwCreateWindow(1024, 768, "Hello World", NULL, NULL);
 	glfwSetWindowPos(window, 0, 0);
 	if (!window) {
 		glfwTerminate();
