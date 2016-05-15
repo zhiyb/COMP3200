@@ -52,21 +52,47 @@ unsigned int readRegister(const bool word, const unsigned int addr, const bool p
 	return val;
 }
 
+static unsigned int lines_prev = CAM_LINES;
+
+float getFPS(unsigned int lines)
+{
+	if (lines == 0)
+		lines = lines_prev;
+	float itvl = CAM_LINEITVL * lines;
+	return 1.f / itvl;
+}
+
 unsigned int setFPS(float fps, bool limit)
 {
-	static unsigned int lines_prev = CAM_LINES;
-	fps = max(fps, FPS_MIN);
-	fps = min(fps, FPS_MAX);
-	unsigned int lines = round((1.f / fps * 1000.f - CAM_ITVL) / CAM_LINEITVL * 1000.f + CAM_LINES);
+	float fps_prev = getFPS(lines_prev);
+	//fps = fmax(fps, FPS_MIN);
+	//fps = fmin(fps, FPS_MAX);
+	//unsigned int lines = round((1.f / fps * 1000.f - CAM_ITVL) / CAM_LINEITVL * 1000.f + CAM_LINES);
+	float itvl = 1.f / fps;
+	unsigned int lines = round(itvl / CAM_LINEITVL);
 	if (limit) {
+#if 1
+		fps = getFPS(lines);
+		float change = FPS_CHANGE / fps_prev / fps_prev / fps_prev;
+		if (fabs(fps - fps_prev) > change) {
+			fps = fps > fps_prev ? fps_prev + change : fps_prev - change;
+			itvl = 1.f / fps;
+			lines = round(itvl / CAM_LINEITVL);
+		}
+#else
 		unsigned int change = lines_prev / 0x12;// CAM_CHANGE;
 		if (abs(lines - lines_prev) > change)
 			lines = lines > lines_prev ? lines_prev + change : lines_prev - change;
+#endif
 	}
+	//clog << fps << ": " << lines << endl;
+#if 0
+	if (lines_prev == lines)
+		return lines;
+#endif
 	lines_prev = lines;
 	// Total lines
 	writeRegister(true, 0x380e, lines);
-	//clog << fps << ": " << lines << endl;
 	return lines;
 }
 

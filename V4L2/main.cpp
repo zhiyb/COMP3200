@@ -14,6 +14,7 @@ struct device dev;
 //struct v4l2_buffer buf;
 volatile unsigned int bufidx = 0;
 volatile int64_t timestamps[BUFFER_NUM];
+struct timeval timevals[BUFFER_NUM];
 
 struct status_t status;
 enum {Queued = 0, Captured, Used, Free} bufstatus[BUFFER_NUM] = {Queued};
@@ -101,6 +102,8 @@ int main(int argc, char *argv[])
 		video_close(&dev);
 		return err;
 	}
+	setFPS(30.f, false);
+	status.fps_request = 30.f;
 
 	// Setup threads
 	bool locked = true;
@@ -136,6 +139,9 @@ restart:
 		if ((err = video_capture(&dev, &buf)) != 0)
 			goto captureFailed;
 		setLED(0);
+		struct timeval tv = buf.timestamp;
+		timevals[buf.index] = tv;
+		//clog << "T: " << tv.tv_sec << "." << tv.tv_usec << endl;
 		count++;
 		if (status.swap) {
 			bufidx = bufidxN;
@@ -143,7 +149,9 @@ restart:
 		} else
 			bufidx = buf.index;
 		bufstatus[bufidx] = Captured;
+		//timestamps[bufidx] = buf getTickCount();
 		timestamps[bufidx] = getTickCount();
+		setFPS(status.fps_request);
 #if ENABLE_CV
 		cvData.notify();
 #endif

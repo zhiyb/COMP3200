@@ -1,9 +1,11 @@
 #include <stdint.h>
+#include <vector>
 #include <opencv2/opencv.hpp>
 #include <opencv2/gpu/gpu.hpp>
 #include "opencv2/nonfree/gpu.hpp"
 #include "global.h"
 #include "camera.h"
+#include "tslog.h"
 #include "cv_private.h"
 
 #define GLM_FORCE_RADIANS
@@ -19,12 +21,11 @@
 #define BLOB_SIZE	7
 #define OF_SIZE		32
 
-#define FILE_VERTEX_SHADER	"cv.vert"
-#define FILE_FRAGMENT_SHADER	"cv.frag"
-
 using namespace std;
 using namespace glm;
 using namespace cv;
+
+static GLuint vao[2], bData;
 
 static map<string, GLint> location;
 
@@ -39,9 +40,8 @@ static void setupVertices()
 {
 	static const vec2 vertices[4] = {{1.f, 1.f}, {1.f, -1.f}, {-1.f, -1.f}, {-1.f, 1.f}};
 
-	GLuint vao;
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
+	glGenVertexArrays(2, vao);
+	glBindVertexArray(vao[0]);
 
 	GLuint bVertex;
 	glGenBuffers(1, &bVertex);
@@ -49,6 +49,12 @@ static void setupVertices()
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), (void *)vertices, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(location["position"]);
 	glVertexAttribPointer(location["position"], 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+	glBindVertexArray(vao[1]);
+	glGenBuffers(1, &bData);
+	glBindBuffer(GL_ARRAY_BUFFER, bData);
+	glEnableVertexAttribArray(location["data"]);
+	glVertexAttribPointer(location["data"], 2, GL_FLOAT, GL_FALSE, 0, 0);
 }
 
 static void getUniforms(GLuint program, const char **uniforms)
@@ -90,6 +96,8 @@ void maskEnhance(Mat mask)
 // OpenCV CPU post processing
 void cvThread_CPU()
 {
+	TSLog tsActual;
+
 	GLFWwindow *window;
 	/* Initialize the library */
 	if (!glfwInit()) {
@@ -101,7 +109,7 @@ void cvThread_CPU()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-	window = glfwCreateWindow(status.width * 2, status.height * 2, "Hello World", NULL, NULL);
+	window = glfwCreateWindow(status.width, status.height, "Hello World", NULL, NULL);
 	glfwSetWindowPos(window, 0, 0);
 	if (!window) {
 		glfwTerminate();
@@ -114,11 +122,32 @@ void cvThread_CPU()
 	glewExperimental = GL_TRUE;
 	glewInit();
 	glEnable(GL_TEXTURE_2D);
+	glEnable(GL_LINE_SMOOTH);
+	glLineWidth(3);
+
+	GLuint programFPS;
+	shader_t shadersFPS[] = {
+		{GL_VERTEX_SHADER, "cv_fps.vert"},
+		{GL_FRAGMENT_SHADER, "cv_fps.frag"},
+		{0, NULL}
+	};
+
+	/* Setup render program */
+	programFPS = setupProgramFromFiles(shadersFPS);
+	if (programFPS == 0) {
+		glfwTerminate();
+		return;
+	}
+	glUseProgram(programFPS);
+	location["data"] = glGetAttribLocation(programFPS, "data");
+	location["last"] = glGetUniformLocation(programFPS, "last");
+	//static const char *uniformsFPS[] = {"last", 0};
+	//getUniforms(programFPS, uniformsFPS);
 
 	GLuint program;
 	shader_t shaders[] = {
-		{GL_VERTEX_SHADER, FILE_VERTEX_SHADER},
-		{GL_FRAGMENT_SHADER, FILE_FRAGMENT_SHADER},
+		{GL_VERTEX_SHADER, "cv.vert"},
+		{GL_FRAGMENT_SHADER, "cv.frag"},
 		{0, NULL}
 	};
 
@@ -147,14 +176,18 @@ void cvThread_CPU()
 	GLuint texture[texcnt];
 	//glActiveTexture(GL_TEXTURE0);
 	glGenTextures(texcnt, texture);
-	for (int i = 0; i != texcnt; i++) {
-		glBindTexture(GL_TEXTURE_2D, texture[i]);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
-		//glTexStorage2D(GL_TEXTURE_2D, 1, GL_R16UI, status.width, status.height);
-	}
+
+	glBindTexture(GL_TEXTURE_2D, texture[0]);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+	//glTexStorage2D(GL_TEXTURE_2D, 1, GL_R16UI, status.width, status.height);
+
+	glBindTexture(GL_TEXTURE_2D, texture[1]);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//glTexStorage2D(GL_TEXTURE_2D, 1, GL_R16UI, status.width, status.height);
 
 	setupVertices();
 
@@ -172,14 +205,19 @@ void cvThread_CPU()
 	float fps = FPS_MAX;
 #endif
 	int64_t past = getTickCount(), count = 0;
-	uint64_t ts, ts_prev = 0;
+	struct timeval ts, ts_prev, ts_init;
+	gettimeofday(&ts_init, 0);
+	ts_prev.tv_sec = 0;
+	ts_prev.tv_usec = 0;
 	unsigned long frameCount = 0;
 	while (1) {
+		glUseProgram(program);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture[0]);
 		locker = cv_gpu.smpr.lock();
 		cv_gpu.smpr.wait(locker);
-		ts = cv_gpu.ts;
+		ts.tv_sec = cv_gpu.ts.tv_sec - ts_init.tv_sec;
+		ts.tv_usec = cv_gpu.ts.tv_usec - ts_init.tv_usec;
 		Mat input(cv_gpu.input);
 		Mat mask(cv_gpu.mask);
 		Mat grey(cv_gpu.grey);
@@ -194,10 +232,14 @@ void cvThread_CPU()
 		if (input.empty())
 			continue;
 
+		//clog << "TS add" << endl;
 #ifdef ADAPTIVE
-		float itvl = (float)(ts - ts_prev) / (float)cv::getTickFrequency();
+		double dts = (double)ts.tv_sec + (double)ts.tv_usec / 1000000.f;
+		double dts_prev = (double)ts_prev.tv_sec + (double)ts_prev.tv_usec / 1000000.f;
+		double itvl = dts - dts_prev;
 #endif
 		ts_prev = ts;
+		tsActual.add(dts);
 #if 0
 		if (status.cvShow) {d
 			imshow("input", input);
@@ -210,7 +252,8 @@ void cvThread_CPU()
 		maskEnhance(mask);
 
 		Mat grey_masked;
-		grey.copyTo(grey_masked, mask);
+		//grey.copyTo(grey_masked, mask);
+		grey.copyTo(grey_masked);
 
 #if 0
 		if (status.cvShow) {
@@ -239,8 +282,8 @@ void cvThread_CPU()
 					continue;
 
 				//Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255));
-				Scalar color(255.f, 0.f, 0.f);
-				cv::drawContours(drawing, *contours, i, color, 2, 8, hierarchy, 0, Point());
+				Scalar color(127.f, 0.f, 0.f);
+				cv::drawContours(drawing, *contours, i, color, 1, 8, hierarchy, 0, Point());
 			}
 		}
 #endif
@@ -292,9 +335,9 @@ void cvThread_CPU()
 					dismaxp = diff[i];
 				}
 				//line(drawing, center[i], next_points[i], colour, 5);
-				line(drawing, prevPts[i], nextPts[i], Scalar(0.f, 255.f, 0.f), 1, 8);
+				line(drawing, prevPts[i], nextPts[i], Scalar(0.f, 127.f, 0.f), 1, 8);
 				//circle(drawing, prevPts[i], 3, Scalar(0.f, 0.f, 255.f), 1, 8);
-				circle(drawing, nextPts[i], 3, Scalar(0.f, 0.f, 255.f), 1, 8);
+				//circle(drawing, nextPts[i], 2, Scalar(0.f, 0.f, 127.f), 1, 8);
 			}
 		}
 
@@ -306,21 +349,38 @@ void cvThread_CPU()
 #ifdef ADAPTIVE
 		// Adaptive FPS calculation
 		fps = dismax / itvl / (float)OF_SIZE;
-		fps = std::max(fps, (float)FPS_MIN);
-		fps = std::min(fps, (float)FPS_MAX);
-		//cout << fps << endl;
-		setFPS(fps);
+		fps = std::fmax(fps, (float)FPS_MIN);
+		fps = std::fmin(fps, (float)FPS_MAX);
+		//cout << fps << ", " << getFPS() << endl;
+		status.fps_request = fps;
+		//setFPS(fps);
 #endif
 
+		//clog << "Render OF" << endl;
+		glBindVertexArray(vao[0]);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texture[1]);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, status.width * sizef, status.height * sizef, 0, GL_RGB, GL_UNSIGNED_BYTE, drawing.data);
+		//clog << "Render OF texture" << endl;
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, drawing.cols, drawing.rows, 0, GL_RGB, GL_UNSIGNED_BYTE, drawing.data);
 		/*glBufferSubData(GL_PIXEL_UNPACK_BUFFER, 0, status.width * status.height * 2, drawing.data);
 		glActiveTexture(GL_TEXTURE1);
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, status.width, status.height, GL_RED_INTEGER,
 				GL_UNSIGNED_SHORT, 0);*/
 
+		//clog << "Render OF draw" << endl;
 		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+		//clog << "Render FPS" << endl;
+		glUseProgram(programFPS);
+		glBindVertexArray(vao[1]);
+		glBindBuffer(GL_ARRAY_BUFFER, bData);
+		glBufferData(GL_ARRAY_BUFFER, tsActual.size(), tsActual.data(), GL_DYNAMIC_DRAW);
+		glUniform1f(location["last"], tsActual.last());
+		//glVertexAttribPointer(location["data"], 2, GL_FLOAT, GL_FALSE, 0, 0);
+		//clog << tsActual.size() << ", " << tsActual.last() << endl;
+		//clog << location["data"] << ", " << location["last"] << endl;
+		glDrawArrays(GL_LINE_STRIP, 0, tsActual.count());
+
 		glfwSwapBuffers(window);
 		count++;
 		frameCount++;

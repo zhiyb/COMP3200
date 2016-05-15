@@ -5,7 +5,8 @@
 
 extern struct cv_gpu_t {
 	semaphore_t smpr;
-	uint64_t ts;
+	//uint64_t ts;
+	struct timeval ts;
 	cv::Mat input, grey, mask;
 	void *raw;
 } cv_gpu;

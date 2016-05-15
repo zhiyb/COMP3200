@@ -71,15 +71,16 @@ void cvThread()
 		cvData.mtx.lock();
 		cvData.bufidx = bufidx;
 		cvData.mtx.unlock();
-		cv_gpu.ts = timestamps[bufidx];
+		//cv_gpu.ts = timestamps[bufidx];
+		cv_gpu.ts = timevals[bufidx];
 #ifdef PROOFING
 		start = getTickCount();
 #endif
 #if 1
 		if (++frameCount >= 10) {
 			void *mem = dev.buffers[cvData.bufidx].mem;
-			memcpy(cv_gpu.raw, mem, status.width * status.height * 2);
-			mem = cv_gpu.raw;
+			//memcpy(cv_gpu.raw, mem, status.width * status.height * 2);
+			//mem = cv_gpu.raw;
 #ifdef CPUIMP
 			raw = Mat(status.height, status.width, CV_16UC1, mem);
 			raw.convertTo(rawu8, CV_8UC1, 1.f / 4.f);
@@ -171,10 +172,11 @@ void cvThread()
 		start = getTickCount();
 #endif
 #ifdef CPUIMP
-		input = img;
+		input = img_orig;
 		grey = img_grey;
 #else
-		img.download(input);
+		//img.download(input);
+		img_orig.download(input);
 		img_grey.download(grey);
 #endif
 #ifdef PROOFING
