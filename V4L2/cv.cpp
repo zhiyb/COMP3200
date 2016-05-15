@@ -17,9 +17,9 @@
 #include "helper.h"
 
 #define ADAPTIVE
-#define MOVE_MAX	32
+#define MOVE_MAX	OF_SIZE
 #define BLOB_SIZE	7
-#define OF_SIZE		32
+#define OF_SIZE		28
 
 using namespace std;
 using namespace glm;
