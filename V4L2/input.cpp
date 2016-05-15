@@ -141,7 +141,7 @@ loop:
 		} else {
 			unsigned int l = setFPS(e, false);
 			cout << "Set camera FPS: " << e << endl;
-			cout << " Output liness: " << l << endl;
+			cout << "  Output lines: " << l << endl;
 		}
 	} else if (cmd == "rb" || (word = (cmd == "rw"))) {
 		unsigned int addr;

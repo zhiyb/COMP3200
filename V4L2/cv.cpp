@@ -178,10 +178,10 @@ void cvThread_CPU()
 	glGenTextures(texcnt, texture);
 
 	glBindTexture(GL_TEXTURE_2D, texture[0]);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
 	//glTexStorage2D(GL_TEXTURE_2D, 1, GL_R16UI, status.width, status.height);
 
 	glBindTexture(GL_TEXTURE_2D, texture[1]);
@@ -223,7 +223,7 @@ void cvThread_CPU()
 		Mat grey(cv_gpu.grey);
 		//glBufferSubData(GL_PIXEL_UNPACK_BUFFER, 0, status.width * status.height * 2, cv_gpu.raw);
 		//glBufferData(GL_PIXEL_UNPACK_BUFFER, status.width * status.height * 2, cv_gpu.raw, GL_DYNAMIC_READ);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_R16UI, status.width, status.height, 0, GL_RED_INTEGER, GL_UNSIGNED_SHORT, cv_gpu.raw);
+		//glTexImage2D(GL_TEXTURE_2D, 0, GL_R16UI, status.width, status.height, 0, GL_RED_INTEGER, GL_UNSIGNED_SHORT, cv_gpu.raw);
 		//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, status.width, status.height, GL_RED_INTEGER,
 		//		GL_UNSIGNED_SHORT, 0);
 		cv_gpu.smpr.unlock(locker);
@@ -232,6 +232,11 @@ void cvThread_CPU()
 		if (input.empty())
 			continue;
 
+		//clog << (input.type() == CV_8UC3) << endl;
+		//clog << (unsigned int)*(unsigned char *)input.data << endl;
+		//resize(input, input, Size(512, 512));
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, input.cols, input.rows, 0, GL_BGR, GL_UNSIGNED_BYTE, input.data);
+		//clog << input.cols << ", " << input.rows << endl;
 		//clog << "TS add" << endl;
 #ifdef ADAPTIVE
 		double dts = (double)ts.tv_sec + (double)ts.tv_usec / 1000000.f;
@@ -241,7 +246,7 @@ void cvThread_CPU()
 		ts_prev = ts;
 		tsActual.add(dts);
 #if 0
-		if (status.cvShow) {d
+		if (status.cvShow) {
 			imshow("input", input);
 			//imshow("grey", grey);
 			//imshow("mask", mask);
@@ -282,7 +287,7 @@ void cvThread_CPU()
 					continue;
 
 				//Scalar color = Scalar(rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255));
-				Scalar color(127.f, 0.f, 0.f);
+				Scalar color(255.f, 0.f, 0.f);
 				cv::drawContours(drawing, *contours, i, color, 1, 8, hierarchy, 0, Point());
 			}
 		}
@@ -335,7 +340,7 @@ void cvThread_CPU()
 					dismaxp = diff[i];
 				}
 				//line(drawing, center[i], next_points[i], colour, 5);
-				line(drawing, prevPts[i], nextPts[i], Scalar(0.f, 127.f, 0.f), 1, 8);
+				line(drawing, prevPts[i], nextPts[i], Scalar(0.f, 255.f, 0.f), 1, 8);
 				//circle(drawing, prevPts[i], 3, Scalar(0.f, 0.f, 255.f), 1, 8);
 				//circle(drawing, nextPts[i], 2, Scalar(0.f, 0.f, 127.f), 1, 8);
 			}
